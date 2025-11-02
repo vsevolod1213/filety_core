@@ -1,0 +1,28 @@
+# virtual envs
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# dotenv, приватные токены
+.env
+
+# macOS
+.DS_Store
+
+# editors/IDE
+.vscode/
+.idea/
+
+# temp / logs / downloads / model caches
+*.log
+/tmp/
+whisper/files/
