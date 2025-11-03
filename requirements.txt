@@ -1,0 +1,5 @@
+aiogram
+dotenv
+os
+io
+faster_whisper

@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 from aiogram.handlers import MessageHandler
 from transcription import transcription
-from pathlib import Path
+#from pathlib import Path
 from io import BytesIO
 
 load_dotenv()
