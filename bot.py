@@ -18,12 +18,13 @@ bot = Bot(token=TOKEN, default_bot_properties=DefaultBotProperties(parse_mode=Pa
 dp= Dispatcher()
 
 max_memory = 20
-files_dir = Path("whisper/files")
+files_dir = Path("files")
+files_dir.mkdir(parents = True, exist_ok = True)
 
 @dp.message(CommandStart())
 async def send_welcome(message: Message):
     await message.answer(
-        "Привет! Отправь мне аудиофайл, и я его расшифрую."
+        "Привет! Расшифрую что хочешь.\nПрисылай <b>аудио | видео</b>...", parse_mode="HTML"
     )
 
 @dp.message(F.document | F.audio | F.voice | F.video | F.video_note)
@@ -34,25 +35,25 @@ class TranscribeHandler(MessageHandler):
         file_obj = message.document or message.audio or message.voice or message.video or message.video_note
         
         if file_obj == message.video or message.video_note:
-            await message.answer("Получил видео, делаю транскрипцию...")
+            status = await message.answer("Получил видео, делаю транскрипцию...")
 
         elif file_obj == message.document or message.audio or message.voice:
-            await message.answer("Получил аудио, начинаю расшифровку...")
+            status = await message.answer("Получил аудио, начинаю расшифровку...")
             
         else:
-            await message.answer("Не удалось получить файл. Попробуйте еще раз.")
+            status = await message.answer("Не удалось получить файл. Попробуйте еще раз.")
             return
         
-        await self.go_to_transcription(message, file_obj)
+        await self.go_to_transcription(message, status, file_obj)
         
-    async def go_to_transcription(self, message: Message, file_obj):
+    async def go_to_transcription(self, message: Message, status_msg: Message, file_obj):
         bio = BytesIO()
         file_size_mb = (file_obj.file_size or 0)/1024/1024
 
         if file_size_mb <= max_memory:
             file_id = getattr(file_obj, "file_id", None)
             if not file_id:
-                await message.answer("Не удалось получить идентификатор файла. Попробуйте еще раз.")
+                await status_msg.edit_text("Не удалось получить идентификатор файла. Попробуйте еще раз.")
                 return
             await bot.download(file_obj, destination=bio)
             bio.seek(0)
@@ -66,9 +67,9 @@ class TranscribeHandler(MessageHandler):
         
         try:
             text = await asyncio.to_thread(which_file, source, media_type=message.content_type)
-            await message.answer(f"<blockquote>{text}</blockquote>",parse_mode="HTML")
+            await status_msg.edit_text(f"<blockquote>{text}</blockquote>",parse_mode="HTML")
         except Exception as e:
-             await message.answer(f"Ничего не услышал")
+             await status_msg.edit_text(f"Ничего не услышал")
         finally:
             if isinstance(source, str) and Path(source).exists():
                 Path(source).unlink()

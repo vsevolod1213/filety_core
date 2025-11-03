@@ -2,10 +2,8 @@ from faster_whisper import WhisperModel
 from io import BytesIO
 import subprocess, tempfile, os
 
-
-#  "small", "medium", "large-v3"
-model_size = "medium"
-model = WhisperModel(model_size, device="auto")
+model_size = "medium" #  "small"/"medium"/"large-v3"
+model = WhisperModel(model_size, device="cpu" ) #device=cpu/cuda/auto, compute_type = "int8"/"int8_float16"/"float16"/"float32"
 
 files_dir = "whisper/files/"
 
