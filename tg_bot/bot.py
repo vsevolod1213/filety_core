@@ -4,11 +4,15 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
-import os
 from dotenv import load_dotenv
 from aiogram.handlers import MessageHandler
-from backend.transcription import transcription, which_file
+import sys
+import os
 from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+from backend.transcription import transcription, which_file
 from io import BytesIO
 
 load_dotenv()
