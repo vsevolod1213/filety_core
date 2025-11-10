@@ -1,0 +1,14 @@
+{
+  "name": "Filety",
+  "short_name": "Filety",
+  "theme_color": "#111827",
+  "background_color": "#111827",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
