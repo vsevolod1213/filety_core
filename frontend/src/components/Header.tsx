@@ -10,13 +10,17 @@ const NAV_ITEMS = [
 
 export default function Header() {
   const { pathname } = useRouter();
-  const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const navRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const [userLabel] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return window.localStorage.getItem("filety-user");
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [hideHeader, setHideHeader] = useState(false);
+  const lastScrollY = useRef(0);
 
   const activeIndex = useMemo(
     () => NAV_ITEMS.findIndex(({ href }) => pathname.startsWith(href)),
@@ -30,7 +34,7 @@ export default function Header() {
         setIndicator({ left: 0, width: 0 });
         return;
       }
-      const el = linkRefs.current[activeIndex];
+      const el = navRefs.current[activeIndex];
       if (el) {
         setIndicator({
           left: el.offsetLeft,
@@ -38,15 +42,53 @@ export default function Header() {
         });
       }
     };
-
     updateIndicator();
     window.addEventListener("resize", updateIndicator);
     return () => window.removeEventListener("resize", updateIndicator);
   }, [activeIndex, showIndicator]);
 
+  useEffect(() => {
+    const updateHeight = () => {
+      setHeaderHeight(headerRef.current?.offsetHeight ?? 0);
+    };
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const isMobile = window.innerWidth < 640;
+      if (!isMobile) {
+        setHideHeader(false);
+        return;
+      }
+
+      if (currentY > lastScrollY.current + 10 && currentY > 80) {
+        setHideHeader(true);
+        setIsMenuOpen(false);
+      } else if (currentY < lastScrollY.current - 10) {
+        setHideHeader(false);
+      }
+
+      lastScrollY.current = currentY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/80 backdrop-blur-lg dark:border-slate-800/70 dark:bg-slate-950/80">
-      <div className="container mx-auto flex items-center justify-between gap-6 px-4 py-4">
+    <header
+      ref={(node) => {
+        headerRef.current = node;
+      }}
+      className={`sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur-lg transition-transform duration-300 dark:border-slate-800/70 dark:bg-slate-950/90 ${
+        hideHeader ? "-translate-y-full" : "translate-y-0"
+      }`}
+    >
+      <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-4">
         <Link
           href="/"
           className="inline-flex items-center rounded-full px-10 py-5 text-lg font-semibold tracking-tight text-slate-900 transition hover:text-purple-500 dark:text-white dark:hover:text-purple-300"
@@ -72,7 +114,7 @@ export default function Header() {
                 key={href}
                 href={href}
                 ref={(node) => {
-                  linkRefs.current[index] = node;
+                  navRefs.current[index] = node;
                 }}
                 className={`relative z-10 rounded-full px-4 py-2 text-sm font-medium transition ${
                   active
@@ -86,73 +128,77 @@ export default function Header() {
           })}
         </nav>
 
-        <button
-          type="button"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-700 dark:text-slate-200 sm:hidden"
-          onClick={() => setIsMenuOpen((prev) => !prev)}
-          aria-label="Меню"
-        >
-          <span className="h-0.5 w-5 rounded-full bg-current" />
-          <span className="sr-only">Открыть меню</span>
-        </button>
-
-        {userLabel ? (
-          <Link
-            href="/account"
-            className="inline-flex items-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-purple-400 hover:text-purple-500 dark:border-slate-700 dark:text-slate-200 dark:hover:text-white"
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="inline-flex items-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-700 dark:text-slate-200 sm:hidden"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
           >
-            Кабинет
-          </Link>
-        ) : (
-          <div className="flex items-center gap-2">
+            Инструменты
+          </button>
+
+          {userLabel ? (
             <Link
-              href="/auth/login"
-              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-700 dark:text-slate-200 dark:hover:text-white"
+              href="/account"
+              className="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-purple-400 hover:text-purple-500 dark:border-slate-700 dark:text-slate-200 dark:hover:text-white sm:inline-flex"
             >
-              Войти
+              Кабинет
             </Link>
-            <Link
-              href="/auth/register"
-              className="hidden rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 active:scale-95 sm:inline-flex"
-            >
-              Регистрация
-            </Link>
-          </div>
-        )}
+          ) : (
+            <div className="hidden items-center gap-2 sm:flex">
+              <Link
+                href="/auth/login"
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-700 dark:text-slate-200 dark:hover:text-white"
+              >
+                Войти
+              </Link>
+              <Link
+                href="/auth/register"
+                className="rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 active:scale-95"
+              >
+                Регистрация
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
 
       {isMenuOpen && (
         <div className="sm:hidden">
           <div
-            className="fixed inset-0 z-[19] bg-slate-900/60 backdrop-blur"
+            className="fixed inset-x-0 z-20 bg-slate-900/40 backdrop-blur-sm"
+            style={{ top: headerHeight }}
             onClick={() => setIsMenuOpen(false)}
             aria-hidden
           />
-          <div className="fixed left-0 top-0 z-20 flex h-full w-64 flex-col gap-4 bg-white p-6 text-slate-900 shadow-2xl dark:bg-slate-950 dark:text-slate-50">
-            <p className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Навигация</p>
+          <div
+            className="fixed z-30 w-64 rounded-3xl border border-slate-200 bg-white/95 p-5 text-slate-900 shadow-2xl transition-all dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50"
+            style={{ top: headerHeight + 8, right: 16 }}
+          >
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Навигация</p>
             {NAV_ITEMS.map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setIsMenuOpen(false)}
-                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-800"
+                className="mt-3 block rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-800"
               >
                 {label}
               </Link>
             ))}
             {!userLabel && (
-              <div className="mt-auto space-y-3">
+              <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 text-sm dark:border-slate-800">
                 <Link
                   href="/auth/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block rounded-full border border-slate-300 px-4 py-2 text-center text-sm font-semibold transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-700"
+                  className="flex-1 rounded-full border border-slate-300 px-4 py-2 text-center font-semibold transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-700"
                 >
                   Войти
                 </Link>
                 <Link
                   href="/auth/register"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block rounded-full bg-purple-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:-translate-y-0.5 active:scale-95"
+                  className="flex-1 rounded-full bg-purple-600 px-4 py-2 text-center font-semibold text-white transition hover:-translate-y-0.5 active:scale-95"
                 >
                   Регистрация
                 </Link>
