@@ -1,5 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
+import { useState } from "react";
 import FileUploader from "@/components/FileUploader";
 
 const stats = [
@@ -25,6 +26,9 @@ export default function TranscribePage() {
   const description = "Загрузите запись и получите чистый текст с таймкодами и экспортом.";
   const url = "https://filety.ru/transcribe";
   const ogImage = "https://filety.ru/og.png";
+  const [output, setOutput] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -35,6 +39,22 @@ export default function TranscribePage() {
     areaServed: "RU",
     url,
     offers: { "@type": "Offer", price: "0", priceCurrency: "RUB" },
+  };
+
+  const handleUploadStart = () => {
+    setLoading(true);
+    setError("");
+    setOutput("");
+  };
+
+  const handleUploadSuccess = (text: string) => {
+    setLoading(false);
+    setOutput(text);
+  };
+
+  const handleUploadError = (message: string) => {
+    setLoading(false);
+    setError(message);
   };
 
   return (
@@ -96,10 +116,25 @@ export default function TranscribePage() {
               </div>
             </div>
             <div id="upload" className="space-y-4">
-              <FileUploader />
+              <FileUploader
+                onUploadStart={handleUploadStart}
+                onUploadSuccess={handleUploadSuccess}
+                onUploadError={handleUploadError}
+              />
               <div className="rounded-3xl border border-white/20 bg-white/10 p-5 text-sm text-white/90 backdrop-blur">
                 <p className="font-semibold">Результат сохранится здесь</p>
-                <p className="mt-1 text-white/70">После интеграции API покажем текст, длительность и ссылки на export.</p>
+
+                {loading && <p className="mt-1 text-white/70">Обработка...</p>}
+
+                {error && !loading && <p className="mt-1 text-red-200">{error}</p>}
+
+                {output && !loading && !error && (
+                  <p className="mt-1 whitespace-pre-line text-white/90">{output}</p>
+                )}
+
+                {!loading && !output && !error && (
+                  <p className="mt-1 text-white/70">После загрузки покажем текст, длительность и ссылки на экспорт.</p>
+                )}
               </div>
             </div>
           </div>
