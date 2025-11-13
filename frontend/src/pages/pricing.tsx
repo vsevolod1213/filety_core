@@ -3,31 +3,31 @@ import Link from "next/link";
 
 const plans = [
   {
-    name: "Starter",
+    name: "Free",
     price: "0 ₽",
-    tagline: "5 минут/день",
-    features: ["Транскрипция до 30 минут", "Конвертация до 20 МБ", "Ограничение по очереди"],
-    cta: "Начать бесплатно",
+    label: "5 минут в день",
+    bullets: ["Первые тесты", "TXT/SRT/VTT", "Очередь по приоритету"],
+    action: "Начать бесплатно",
   },
   {
     name: "Pro",
-    price: "1 990 ₽",
-    tagline: "в месяц",
-    features: ["До 15 часов аудио", "Приоритетная очередь", "Экспорт TXT/SRT/VTT"],
-    cta: "Оформить Pro",
+    price: "1 990 ₽/мес",
+    label: "до 15 часов",
+    bullets: ["Длинные файлы", "Приоритетная обработка", "Webhook и экспорт"],
+    action: "Оформить Pro",
   },
   {
     name: "Team",
     price: "запрос",
-    tagline: "API + интеграции",
-    features: ["Общий лимит для команды", "Выделенный webhook", "SLA и отчёты"],
-    cta: "Связаться",
+    label: "API + SLA",
+    bullets: ["Групповые лимиты", "Уведомления", "Поддержка 24/7"],
+    action: "Связаться",
   },
 ];
 
 export default function PricingPage() {
-  const title = "Filety Pricing — тарифы на транскрипцию и конвертацию";
-  const description = "Прозрачные лимиты и планы. Бесплатный старт, Pro и корпоративный пакет.";
+  const title = "Filety Тарифы — бесплатный старт и план Pro";
+  const description = "Выберите объём: Free для тестов, Pro для работы, Team для интеграций.";
   const url = "https://filety.ru/pricing";
   const ogImage = "https://filety.ru/og.png";
 
@@ -41,9 +41,9 @@ export default function PricingPage() {
       "@type": "Offer",
       position: index + 1,
       name: plan.name,
-      price: plan.price,
-      priceCurrency: plan.price.includes("₽") ? "RUB" : "",
-      description: plan.tagline,
+      price: plan.price.replace(/[^0-9]/g, "") || "0",
+      priceCurrency: "RUB",
+      description: plan.label,
     })),
   };
 
@@ -67,18 +67,16 @@ export default function PricingPage() {
           <div className="absolute inset-0 opacity-40" aria-hidden>
             <div className="h-full w-full bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.3),_transparent_60%)]" />
           </div>
-          <div className="container relative mx-auto space-y-6 px-4 py-24 text-center">
-            <p className="inline-flex items-center justify-center rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.4em]">
-              Pricing
-            </p>
-            <h1 className="text-4xl font-semibold leading-tight md:text-5xl">Тарифы Filety</h1>
-            <p className="text-lg text-white/80">Подберите план под свои файлы. Бесплатный старт для теста.</p>
-            <div className="flex justify-center gap-4">
+          <div className="container relative mx-auto space-y-6 px-4 py-20 text-center sm:py-24">
+            <p className="inline-flex items-center justify-center rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.4em]">Pricing</p>
+            <h1 className="text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">Тарификация без сюрпризов</h1>
+            <p className="text-base text-white/80 sm:text-lg">Начните бесплатно и обновляйтесь, когда понадобится больше минут.</p>
+            <div className="flex flex-wrap justify-center gap-4">
               <Link href="/transcribe" className="rounded-full bg-white px-6 py-3 text-base font-semibold text-slate-900">
-                Использовать сейчас
+                Запустить транскрипцию
               </Link>
               <a href="mailto:hi@filety.ru" className="rounded-full border border-white/60 px-6 py-3 text-base font-semibold text-white">
-                Написать нам
+                Написать команде
               </a>
             </div>
           </div>
@@ -91,19 +89,19 @@ export default function PricingPage() {
                 key={plan.name}
                 className="rounded-[32px] border border-slate-200/70 bg-slate-50/80 p-6 text-slate-900 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/60 dark:text-slate-50"
               >
-                <p className="text-sm uppercase tracking-[0.4em] text-slate-500 dark:text-slate-400">{plan.name}</p>
-                <p className="mt-4 text-4xl font-semibold">{plan.price}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{plan.tagline}</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">{plan.name}</p>
+                <p className="mt-4 text-3xl font-semibold">{plan.price}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{plan.label}</p>
                 <ul className="mt-6 space-y-2 text-sm text-slate-700 dark:text-slate-200">
-                  {plan.features.map((feature) => (
-                    <li key={feature}>• {feature}</li>
+                  {plan.bullets.map((bullet) => (
+                    <li key={bullet}>• {bullet}</li>
                   ))}
                 </ul>
                 <button
                   type="button"
                   className="mt-8 w-full rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-purple-600 dark:bg-white dark:text-slate-900"
                 >
-                  {plan.cta}
+                  {plan.action}
                 </button>
               </article>
             ))}

@@ -6,12 +6,17 @@ export default function Footer() {
       <div className="container mx-auto flex flex-col gap-4 px-4 py-8 text-sm text-slate-500 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
         <p>© {new Date().getFullYear()} Filety. Работаем с аудио и видео.</p>
         <div className="flex gap-4">
-          <Link href="/transcribe" className="hover:text-slate-900 dark:hover:text-white">
-            Транскрипция
-          </Link>
+          
           <Link href="/pricing" className="hover:text-slate-900 dark:hover:text-white">
-            Цены
+            Тарифы
           </Link>
+          <a href="mailto:hi@filety.ru" className="hover:text-slate-900 dark:hover:text-white">
+          Для связи
+          </a>
+          <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-white">
+            Политика конфиденциальности
+          </Link>
+
         </div>
       </div>
     </footer>

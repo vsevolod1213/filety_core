@@ -5,11 +5,13 @@ export default function Document() {
   return (
     <Html lang="ru" dir="ltr">
       <Head>
-        {/* Фавиконки и PWA */}
+        {/* Фавиконки для разных тем и устройств */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link id="site-favicon" rel="icon" type="image/png" href="/icon1.png" />
+        <link rel="icon" type="image/png" href="/icon1.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" type="image/svg+xml" href="/icon0.svg" media="(prefers-color-scheme: dark)" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
 
+        {/* PWA */}
         <link rel="manifest" href="/site.webmanifest" />
         <meta id="theme-color" name="theme-color" content="#f8fafc" />
 

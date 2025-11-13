@@ -102,7 +102,7 @@ export default function Header() {
             </Link>
             <Link
               href="/auth/register"
-              className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-purple-600 dark:bg-white dark:text-slate-900"
+              className="hidden rounded-full bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 sm:inline-flex"
             >
               Регистрация
             </Link>
