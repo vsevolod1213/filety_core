@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from io import BytesIO
 import asyncio
 from backend.transcription import which_file
 
@@ -19,8 +20,11 @@ async def health_check():
 @app.post("/translate")
 async def translate_file(file: UploadFile = File(...)):
     content = await file.read()
+    buffer = BytesIO(content)
+    buffer.seek(0)
+    media = file.content_type or ""
     try:
-        text = await asyncio.to_thread(which_file, content, media_type=file.content_type)
+        text = await asyncio.to_thread(which_file, buffer, media_type=media)
         return {"transcription": text}
     except Exception as e:
         return {"error": "Transcription failed"}
