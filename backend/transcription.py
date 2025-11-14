@@ -8,7 +8,8 @@ model = WhisperModel(model_size, device="cpu" ) #device=cpu/cuda/auto, compute_t
 files_dir = "whisper/files/"
 
 def which_file(source: BytesIO | str, media_type: str):
-  if media_type in ("video", "video_note"):
+  if media_type.startswith("video"):
+
     return extract_audio(source)
   else:
     return transcription(source)

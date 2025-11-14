@@ -13,9 +13,11 @@ export async function uploadToServer(file: File) {
   formData.append("file", file);
 
   const response = await fetch("https://api.filety.online/translate", {
-    method: "POST",
-    body: formData,
-  });
+  method: "POST",
+  body: formData,
+  credentials: "include",
+});
+
   if (!response.ok) {
     throw new Error("Network response was not ok");
   }
