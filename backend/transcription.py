@@ -5,7 +5,7 @@ import subprocess, tempfile, os
 model_size = "medium" #  "small"/"medium"/"large-v3"
 model = WhisperModel(model_size, device="cpu" ) #device=cpu/cuda/auto, compute_type = "int8"/"int8_float16"/"float16"/"float32"
 
-files_dir = "whisper/files/"
+files_dir = "filety/backend/files/"
 
 def which_file(source: BytesIO | str, media_type: str):
   if media_type.startswith("video"):

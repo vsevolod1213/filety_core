@@ -27,26 +27,36 @@ async def translate_file(file: UploadFile = File(...)):
     media = file.content_type or ""
 
     temp_path = None
-    buffer: BytesIO | None = None
-    if file.size and file.size > MAX_SIZE_IN_MEMORY:
-        fd, temp_path = tempfile.mkstemp(suffix = os.path.splitext(file.filename or "")[1] or ".tmp")
-        os.close(fd)
-        async for chunk in file.stream(10 * MB):
-            with open(temp_path, "ab") as fh:
-                fh.write(chunk)
-        source = temp_path
+    total_size = 0
+    buffer = None
 
-    else:
-        content = await file.read()
+    first_chunk = await file.read(1 * MB)
+    total_size += len(first_chunk)
+
+    if total_size <= MAX_SIZE_IN_MEMORY:
+        content = first_chunk + await file.read()
         buffer = BytesIO(content)
         buffer.seek(0)
         source = buffer
+
+    else:
+        suffix = os.path.splitext(file.filename or "")[1] or ".tmp"
+        fd, temp_path = tempfile.mkstemp(suffix=suffix)
+        os.close(fd)
+        with open(temp_path, "wb") as f:
+            f.write(first_chunk)
+        async for chunk in file.stream(2 * MB):
+            total_size += len(chunk)
+            with open(temp_path, "ab") as f:
+                f.write(chunk)
+        source = temp_path
     
     try:
         text = await asyncio.to_thread(which_file, source, media_type=media)
         return {"transcription": text}
     except Exception as e:
-        return {"error": "Transcription failed"}
+        print("ERROR:", e)
+        return {"error": "Transcription failed", "details": str(e)}
     finally:
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
