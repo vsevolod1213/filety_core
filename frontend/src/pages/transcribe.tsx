@@ -26,9 +26,9 @@ export default function TranscribePage() {
   const description = "Загрузите запись и получите чистый текст с таймкодами и экспортом.";
   const url = "https://filety.ru/transcribe";
   const ogImage = "https://filety.ru/og.png";
-  const [output, setOutput] = useState("");
+  const [resultText, setResultText] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -42,19 +42,42 @@ export default function TranscribePage() {
   };
 
   const handleUploadStart = () => {
-    setLoading(true);
+    setResultText("");
     setError("");
-    setOutput("");
+    setCopied(false);
   };
 
   const handleUploadSuccess = (text: string) => {
-    setLoading(false);
-    setOutput(text);
+    setResultText(text);
   };
 
   const handleUploadError = (message: string) => {
-    setLoading(false);
+    setResultText("");
     setError(message);
+  };
+
+  const handleCopy = async () => {
+    if (!resultText) return;
+    try {
+      await navigator.clipboard.writeText(resultText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!resultText) return;
+    const blob = new Blob([resultText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "filety-transcription.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -121,21 +144,43 @@ export default function TranscribePage() {
                 onUploadSuccess={handleUploadSuccess}
                 onUploadError={handleUploadError}
               />
-              <div className="rounded-3xl border border-white/20 bg-white/10 p-5 text-sm text-white/90 backdrop-blur">
-                <p className="font-semibold">Результат сохранится здесь</p>
+              {(resultText || error) && (
+                <div className="rounded-[28px] border border-white/30 bg-white/95 p-5 text-sm text-slate-900 shadow-xl dark:border-white/10 dark:bg-white/10 dark:text-white">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-slate-900 dark:text-white">Готовый текст</p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCopy}
+                        disabled={!resultText}
+                        className="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-purple-400 hover:text-purple-500 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300"
+                      >
+                        {copied ? "Скопировано" : "Копировать"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownload}
+                        disabled={!resultText}
+                        className="inline-flex items-center rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-purple-400 hover:text-purple-500 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300"
+                      >
+                        Скачать TXT
+                      </button>
+                    </div>
+                  </div>
 
-                {loading && <p className="mt-1 text-white/70">Обработка...</p>}
+                  {error && (
+                    <p className="mt-4 rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/20 dark:text-rose-200">
+                      {error}
+                    </p>
+                  )}
 
-                {error && !loading && <p className="mt-1 text-red-200">{error}</p>}
-
-                {output && !loading && !error && (
-                  <p className="mt-1 whitespace-pre-line text-white/90">{output}</p>
-                )}
-
-                {!loading && !output && !error && (
-                  <p className="mt-1 text-white/70">После загрузки покажем текст, длительность и ссылки на экспорт.</p>
-                )}
-              </div>
+                  {resultText && (
+                    <div className="mt-4 max-h-64 overflow-y-auto rounded-2xl border border-slate-200/80 bg-white/70 p-4 text-sm leading-relaxed shadow-inner dark:border-white/20 dark:bg-white/5">
+                      <p className="whitespace-pre-line">{resultText}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </section>
