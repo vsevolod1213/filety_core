@@ -52,10 +52,13 @@ async def translate_file(file: UploadFile = File(...)):
         with open(temp_path, "wb") as f:
             f.write(first_chunk)
 
-        async for chunk in file.stream(2 * MB):
-            total_size += len(chunk)
-            with open(temp_path, "ab") as f:
+            while True:
+                chunk = await file.read(2 * MB)
+                if not chunk:
+                    break
+                total_size += len(chunk)
                 f.write(chunk)
+
 
         source = temp_path
 

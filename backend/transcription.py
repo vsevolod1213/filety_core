@@ -67,7 +67,7 @@ def transcription(source):
 
     is_file = isinstance(source, str)
     if is_file:
-        cleanup.append(source)
+      cleanup.append(source)
 
     if isinstance(source, BytesIO):
         source.seek(0)
