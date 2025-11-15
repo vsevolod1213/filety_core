@@ -5,7 +5,7 @@ import subprocess, tempfile, os
 model_size = "medium" #  "small"/"medium"/"large-v3"
 model = WhisperModel(model_size, device="cpu" ) #device=cpu/cuda/auto, compute_type = "int8"/"int8_float16"/"float16"/"float32"
 
-files_dir = "root/filety/backend/files/"
+files_dir = "/root/filety/backend/files/"
 os.makedirs(files_dir, exist_ok=True)
 
 
@@ -17,11 +17,11 @@ def which_file(source: BytesIO | str, media_type: str):
     return transcription(source)
 
 def extract_audio(source: BytesIO | str):
-  fd, temp_audio = tempfile.mkstemp(suffix=".wav")
+  fd, temp_audio = tempfile.mkstemp(suffix=".wav", dir=files_dir)
   os.close(fd)
   try:  
     if isinstance(source, BytesIO):
-      fd_in, temp_video = tempfile.mkstemp(suffix=".mp4")
+      fd_in, temp_video = tempfile.mkstemp(suffix=".mp4", dir=files_dir)
       os.close(fd_in)
       with open(temp_video, "wb") as f:
           f.write(source.read())
