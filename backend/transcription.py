@@ -5,7 +5,15 @@ import tempfile
 import os
 
 model_size = "medium"
-model = WhisperModel(model_size, device="cpu")
+model = None
+
+def get_model():
+    global model
+    if model is None:
+        print(">>> Loading Whisper model (lazy load)...")
+        model = WhisperModel(model_size, device="cpu")
+    return model
+
 
 files_dir = "/root/filety/backend/files/"
 os.makedirs(files_dir, exist_ok=True)
@@ -72,7 +80,8 @@ def transcription(source):
     if isinstance(source, BytesIO):
         source.seek(0)
 
-    segments, info = model.transcribe(
+    mdl = get_model()
+    segments, info = mdl.transcribe(
         source,
         task="transcribe",
         language=None,
