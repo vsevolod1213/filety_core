@@ -34,12 +34,14 @@ async def translate_file(file: UploadFile = File(...)):
     total_size += len(first_chunk)
 
     if total_size <= MAX_SIZE_IN_MEMORY:
+        print(f"[UPLOAD] Small file ({total_size} bytes), using RAM buffer")
         content = first_chunk + await file.read()
         buffer = BytesIO(content)
         buffer.seek(0)
         source = buffer
 
     else:
+        print(f"[UPLOAD] Large file ({total_size} bytes), using temp file: {temp_path}")
         suffix = os.path.splitext(file.filename or "")[1] or ".tmp"
         fd, temp_path = tempfile.mkstemp(suffix=suffix)
         os.close(fd)
