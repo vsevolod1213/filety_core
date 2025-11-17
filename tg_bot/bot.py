@@ -38,10 +38,10 @@ class TranscribeHandler(MessageHandler):
   
         file_obj = message.document or message.audio or message.voice or message.video or message.video_note
         
-        if file_obj == message.video or message.video_note:
+        if file_obj == message.document or message.video or message.video_note:
             status = await message.answer("Получил видео, делаю транскрипцию...")
 
-        elif file_obj == message.document or message.audio or message.voice:
+        elif file_obj ==  message.audio or message.voice:
             status = await message.answer("Получил аудио, начинаю расшифровку...")
             
         else:
