@@ -78,11 +78,20 @@ async def translate_file(file: UploadFile = File(...)):
         text, clean = await asyncio.to_thread(which_file, source, media_type=media)
         cleanup_files.extend(clean)
         return {"transcription": text}
+
     except TranscriptionError as exc:
         cleanup_files.extend(exc.cleanup)
-        return {"error": "Transcription failed"}
+        return {
+            "error": "Transcription failed",
+            "details": str(exc),
+        }
+
     except Exception as e:
-        return {"error": "Transcription failed", "details": str(e)}
+        return {
+            "error": "Transcription failed",
+            "details": f"Unhandled: {e.__class__.__name__}: {e}",
+        }
+
     finally:
         _safe_remove(temp_path)
         for f in cleanup_files:
