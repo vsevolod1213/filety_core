@@ -17,11 +17,14 @@ app.add_middleware(
         "https://filety.ru",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://filety-core.vercel.app"
+        "https://filety-core.vercel.app",
+        "https://api.filety.online",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+
 )
 
 @app.get("/health")
