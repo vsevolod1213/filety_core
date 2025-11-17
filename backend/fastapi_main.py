@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from io import BytesIO
 import asyncio
-from backend.transcription import which_file
+from backend.transcription import which_file, TranscriptionError
 import os
 import tempfile
 
@@ -27,6 +27,17 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+
+def _safe_remove(path: str | None):
+    if not path:
+        return
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except OSError:
+        pass
+
 
 @app.post("/translate")
 async def translate_file(file: UploadFile = File(...)):
@@ -59,7 +70,6 @@ async def translate_file(file: UploadFile = File(...)):
                 total_size += len(chunk)
                 f.write(chunk)
 
-
         source = temp_path
 
     cleanup_files = []
@@ -68,21 +78,12 @@ async def translate_file(file: UploadFile = File(...)):
         text, clean = await asyncio.to_thread(which_file, source, media_type=media)
         cleanup_files.extend(clean)
         return {"transcription": text}
-
+    except TranscriptionError as exc:
+        cleanup_files.extend(exc.cleanup)
+        return {"error": "Transcription failed"}
     except Exception as e:
         return {"error": "Transcription failed", "details": str(e)}
-
     finally:
-        if temp_path and os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except:
-                pass
-
+        _safe_remove(temp_path)
         for f in cleanup_files:
-            try:
-                if os.path.exists(f):
-                    os.remove(f)
-            except:
-                pass
-
+            _safe_remove(f)

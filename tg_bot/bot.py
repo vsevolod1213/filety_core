@@ -70,8 +70,14 @@ class TranscribeHandler(MessageHandler):
             source = temp_path
         
         try:
-            text = await asyncio.to_thread(which_file, source, media_type=message.content_type)
+            text, cleanup = await asyncio.to_thread(which_file, source, media_type=message.content_type)
             await status_msg.edit_text(f"<blockquote>{text}</blockquote>",parse_mode="HTML")
+            for f in cleanup:
+                try:
+                    if os.path.exists(f):
+                        os.remove(f)
+                except:
+                    pass
         except Exception as e:
              await status_msg.edit_text(f"Ничего не услышал")
         finally:
