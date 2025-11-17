@@ -75,8 +75,7 @@ def transcription(source):
     if isinstance(source, BytesIO):
         source.seek(0)
 
-    mdl = get_model()
-    segments, info = mdl.transcribe(
+    segments, info = model.transcribe(
         source,
         task="transcribe",
         language=None,
