@@ -5,14 +5,9 @@ import tempfile
 import os
 
 model_size = "small" #  "small"/"medium"/"large-v3"
-model = None
 
-def get_model():
-    global model
-    if model is None:
-        print(">>> Loading Whisper model (lazy load)...")
-        model = WhisperModel(model_size, device="cpu", compute_type="int8") #device=cpu/cuda/auto, compute_type = "int8"/"int8_float16"/"float16"/"float32"
-    return model
+model = WhisperModel("small", device="cpu", compute_type="int8", cpu_threads=3, num_workers=1)
+
 
 
 files_dir = "/root/filety/backend/files/"

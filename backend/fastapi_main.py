@@ -86,7 +86,3 @@ async def translate_file(file: UploadFile = File(...)):
             except:
                 pass
 
-@app.on_event("startup")
-async def warmup():
-    from backend.transcription import get_model
-    get_model()
