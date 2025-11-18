@@ -28,6 +28,7 @@ export default function TranscribePage() {
   const ogImage = "https://filety.ru/og.png";
   const [resultText, setResultText] = useState("");
   const [error, setError] = useState("");
+  const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const jsonLd = {
@@ -45,15 +46,18 @@ export default function TranscribePage() {
     setResultText("");
     setError("");
     setCopied(false);
+    setProcessing(true);
   };
 
   const handleUploadSuccess = (text: string) => {
     setResultText(text);
+    setProcessing(false);
   };
 
   const handleUploadError = (message: string) => {
     setResultText("");
     setError(message);
+    setProcessing(false);
   };
 
   const handleCopy = async () => {
@@ -144,7 +148,7 @@ export default function TranscribePage() {
                 onUploadSuccess={handleUploadSuccess}
                 onUploadError={handleUploadError}
               />
-              {(resultText || error) && (
+              {(resultText || error || processing) && (
                 <div className="rounded-[28px] border border-white/30 bg-white/95 p-5 text-sm text-slate-900 shadow-xl dark:border-white/10 dark:bg-white/10 dark:text-white">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold text-slate-900 dark:text-white">Готовый текст</p>
@@ -168,6 +172,15 @@ export default function TranscribePage() {
                     </div>
                   </div>
 
+                  {processing && !resultText && !error && (
+                    <div className="mt-4 flex flex-col items-center gap-2 text-sm text-slate-500 dark:text-slate-200">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-brand-700 shadow dark:bg-white/10">
+                        <span className="h-3 w-3 animate-ping rounded-full bg-brand-600" />
+                        <span>Обрабатываем в Whisper…</span>
+                      </div>
+                    </div>
+                  )}
+
                   {error && (
                     <p className="mt-4 rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/20 dark:text-rose-200">
                       {error}
@@ -178,6 +191,12 @@ export default function TranscribePage() {
                     <div className="mt-4 max-h-64 overflow-y-auto rounded-2xl border border-slate-200/80 bg-white/70 p-4 text-sm leading-relaxed shadow-inner dark:border-white/20 dark:bg-white/5">
                       <p className="whitespace-pre-line">{resultText}</p>
                     </div>
+                  )}
+
+                  {!processing && !resultText && !error && (
+                    <p className="mt-4 text-sm text-slate-500 dark:text-white/70">
+                      После загрузки покажем текст, длительность и ссылки на экспорт.
+                    </p>
                   )}
                 </div>
               )}

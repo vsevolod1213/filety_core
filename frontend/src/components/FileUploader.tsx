@@ -9,6 +9,10 @@ type FileUploaderProps = {
 
 type UploadState = "idle" | "uploading" | "processing" | "done" | "error";
 
+const API_BASE = "https://api.filety.online";
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function uploadToServer(file: File) {
   const formData = new FormData();
   formData.append("file", file);
@@ -16,29 +20,49 @@ export async function uploadToServer(file: File) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3 * 60 * 1000);
 
-  let response: Response;
   try {
-    response = await fetch("https://api.filety.online/translate", {
+    const startResponse = await fetch(`${API_BASE}/translate/start`, {
       method: "POST",
       body: formData,
-      //signal: controller.signal,
+      signal: controller.signal,
+      duplex: "half",
     });
+
+    if (!startResponse.ok) {
+      const message = await startResponse.text();
+      throw new Error(message || "Failed to start transcription");
+    }
+
+    const data = await startResponse.json();
+    const taskId = data.task_id;
+    if (!taskId) {
+      throw new Error("task_id is missing in response");
+    }
+
+    while (true) {
+      await delay(1500);
+      const statusResponse = await fetch(`${API_BASE}/translate/status?task_id=${taskId}`);
+      if (!statusResponse.ok) {
+        const message = await statusResponse.text();
+        throw new Error(message || "Failed to check status");
+      }
+      const statusData = await statusResponse.json();
+      if (statusData.status === "done") {
+        return { transcription: statusData.transcription };
+      }
+      if (statusData.status === "error") {
+        throw new Error(statusData.error || "Transcription failed");
+      }
+    }
   } finally {
     clearTimeout(timeout);
   }
-
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "Network response was not ok");
-  }
-
-  return response.json();
 }
 
 const STATUS_TEXT: Record<UploadState, string> = {
   idle: "Выберите аудио или видео, чтобы начать.",
-  uploading: "Обрабатываем файл…",
-  processing: "Whisper обрабатывает запись…",
+  uploading: "Файл загружается на сервер…",
+  processing: "Обработка на сервере…",
   done: "Готово! Расшифровка получена.",
   error: "Не удалось загрузить файл. Попробуйте снова.",
 };
