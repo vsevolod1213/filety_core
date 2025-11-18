@@ -38,9 +38,32 @@ class TranscribeHandler(MessageHandler):
   
         file_obj = message.document or message.audio or message.voice or message.video or message.video_note
         
-        if file_obj in (message.document, message.video, message.video_note):
+        doc = message.document
+
+        mime = doc.mime_type if (doc and doc.mime_type) else None
+        filename = doc.file_name if (doc and doc.file_name) else None
+        ext = Path(filename).suffix.lower() if filename else None
+
+        video_ext = {".mp4", ".mov", ".mkv", ".avi", ".webm"}
+        audio_ext = {".mp3", ".wav", ".ogg", ".m4a", ".flac"}
+
+        is_video = (
+            message.video
+            or message.video_note
+            or (mime and mime.startswith("video/"))
+            or (ext in video_ext)
+        )
+
+        is_audio = (
+            message.audio
+            or message.voice
+            or (mime and mime.startswith("audio/"))
+            or (ext in audio_ext)
+        )
+
+        if is_video:
             status = await message.answer("Получил видео, делаю транскрибацию...")
-        elif file_obj in (message.audio, message.voice):
+        elif is_audio:
             status = await message.answer("Получил аудио, начинаю расшифровку...")
         else:
             status = await message.answer("Не удалось получить файл. Попробуйте еще раз.")
@@ -48,7 +71,7 @@ class TranscribeHandler(MessageHandler):
         
         await self.go_to_transcription(message, status, file_obj)
 
-    async def keep_aditing(status_msg: Message, stop_event: asyncio.Event):
+    async def keep_aditing(self, status_msg: Message, stop_event: asyncio.Event):
         dots = 0
         while not stop_event.is_set():
             dots = (dots + 1)% 4
@@ -77,8 +100,18 @@ class TranscribeHandler(MessageHandler):
             await bot.download(file_obj, destination=temp_path)
             source = temp_path
         
+        stop_event = asyncio.Event()
+        editing_task = asyncio.create_task(self.keep_aditing(status_msg, stop_event))
+
         try:
             text, cleanup = await asyncio.to_thread(which_file, source, media_type=message.content_type)
+            stop_event.set()
+            editing_task.cancel()
+            try:
+                await editing_task
+            except:
+                pass
+
             await status_msg.edit_text(f"<blockquote>{text}</blockquote>",parse_mode="HTML")
             for f in cleanup:
                 try:
@@ -87,7 +120,14 @@ class TranscribeHandler(MessageHandler):
                 except:
                     pass
         except Exception as e:
-             await status_msg.edit_text(f"Ничего не услышал")
+            stop_event.set()
+            editing_task.cancel()
+            try:
+                await editing_task
+            except:
+                pass
+
+            await status_msg.edit_text(f"Ничего не услышал")
         finally:
             if isinstance(source, (str, Path)) and Path(source).exists():
                 Path(source).unlink()

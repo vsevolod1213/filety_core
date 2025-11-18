@@ -22,7 +22,6 @@ export async function uploadToServer(file: File) {
       method: "POST",
       body: formData,
       signal: controller.signal,
-      duplex: "half",
     });
   } finally {
     clearTimeout(timeout);
