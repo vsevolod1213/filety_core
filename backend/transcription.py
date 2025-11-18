@@ -6,7 +6,7 @@ import os
 
 model_size = "small"  # "small"/"medium"/"large-v3"
 
-model = WhisperModel("small", device="cpu", compute_type="int8", cpu_threads=3, num_workers=1)
+model = WhisperModel("small", device="cpu", compute_type="float32", cpu_threads=3, num_workers=1)
 
 files_dir = "/root/filety/backend/files/"
 os.makedirs(files_dir, exist_ok=True)

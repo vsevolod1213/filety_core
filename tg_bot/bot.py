@@ -38,18 +38,26 @@ class TranscribeHandler(MessageHandler):
   
         file_obj = message.document or message.audio or message.voice or message.video or message.video_note
         
-        if file_obj == message.document or message.video or message.video_note:
-            status = await message.answer("Получил видео, делаю транскрипцию...")
-
-        elif file_obj ==  message.audio or message.voice:
+        if file_obj in (message.document, message.video, message.video_note):
+            status = await message.answer("Получил видео, делаю транскрибацию...")
+        elif file_obj in (message.audio, message.voice):
             status = await message.answer("Получил аудио, начинаю расшифровку...")
-            
         else:
             status = await message.answer("Не удалось получить файл. Попробуйте еще раз.")
             return
         
         await self.go_to_transcription(message, status, file_obj)
-        
+
+    async def keep_aditing(status_msg: Message, stop_event: asyncio.Event):
+        dots = 0
+        while not stop_event.is_set():
+            dots = (dots + 1)% 4
+            try:
+                await status_msg.edit_text("Обрабатываю" + "." * dots)
+            except:
+                pass
+            await asyncio.sleep(1)
+
     async def go_to_transcription(self, message: Message, status_msg: Message, file_obj):
         bio = BytesIO()
         file_size_mb = (file_obj.file_size or 0)/1024/1024
@@ -81,8 +89,9 @@ class TranscribeHandler(MessageHandler):
         except Exception as e:
              await status_msg.edit_text(f"Ничего не услышал")
         finally:
-            if isinstance(source, str) and Path(source).exists():
+            if isinstance(source, (str, Path)) and Path(source).exists():
                 Path(source).unlink()
+
 
 async def main():
     me = await bot.get_me()

@@ -13,10 +13,20 @@ export async function uploadToServer(file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch("https://api.filety.online/translate", {
-    method: "POST",
-    body: formData,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3 * 60 * 1000);
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.filety.online/translate", {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+      duplex: "half",
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const message = await response.text();
