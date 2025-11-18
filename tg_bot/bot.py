@@ -14,6 +14,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 from backend.transcription import transcription, which_file
 from io import BytesIO
+from html import escape
 
 load_dotenv()
 
@@ -24,6 +25,24 @@ dp= Dispatcher()
 max_memory = 20
 files_dir = Path("files")
 files_dir.mkdir(parents = True, exist_ok = True)
+
+MAX_TG_SIMVOLS = 4096
+WRAP_PREFIX = "<blockquote>"
+WRAP_SUFFIX = "</blockquote>"
+CHUNK_SIZE = MAX_TG_SIMVOLS - len(WRAP_PREFIX) - len(WRAP_SUFFIX) - 100
+
+def split_text(text: str, chunk_size: int = CHUNK_SIZE) -> list[str]:
+    chunks: list[str] = []
+    while text:
+        if len(text) <= chunk_size:
+            chunks.append(text)
+            break
+        split_index = text.rfind('\n', 0, chunk_size)
+        if split_index == -1:
+            split_index = chunk_size
+        chunks.append(text[:split_index])
+        text = text[split_index:].lstrip()
+    return chunks
 
 @dp.message(CommandStart())
 async def send_welcome(message: Message):
@@ -111,8 +130,17 @@ class TranscribeHandler(MessageHandler):
                 await editing_task
             except:
                 pass
+            
+            save_text = escape(text)
+            parts = split_text(save_text, chunk_size=CHUNK_SIZE)
+            if not parts:
+                await status_msg.edit_text(f"Ничего не услышал")
+                return
+            await status_msg.edit_text(f"{WRAP_PREFIX}{parts[0]}{WRAP_SUFFIX}", parse_mode="HTML")
 
-            await status_msg.edit_text(f"<blockquote>{text}</blockquote>",parse_mode="HTML")
+            for part in parts[1:]:
+                await message.answer(f"{WRAP_PREFIX}{part}{WRAP_SUFFIX}", parse_mode="HTML")
+                
             for f in cleanup:
                 try:
                     if os.path.exists(f):
