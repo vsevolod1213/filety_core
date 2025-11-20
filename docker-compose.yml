@@ -17,7 +17,7 @@ services:
     container_name: filety_admin
     restart: always
     ports:
-      - "8080:8000"
+      - "8080:8080"
     depends_on:
       - postgres
       
