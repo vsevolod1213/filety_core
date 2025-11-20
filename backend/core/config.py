@@ -1,10 +1,11 @@
+# backend/core/config.py
 import os
 from functools import lru_cache
 from dotenv import load_dotenv
 
 load_dotenv()
 
-class Setings:
+class Settings:
     def __init__(self)->None:
         self.postgres_db = os.getenv("POSTGRES_DB")
         self.postgres_user = os.getenv("POSTGRES_USER")
@@ -18,6 +19,6 @@ class Setings:
             f"postgresql+psycopg2://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
-    @lru_cache()
-    def get_settings(self) -> 'Setings':
-        return Setings()
+@lru_cache()
+def get_settings(self) -> Settings:
+    return Settings()

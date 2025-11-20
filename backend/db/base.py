@@ -1,3 +1,4 @@
+# backend/db/base.py
 from backend.db.session import Base
 from backend.models.user import User
 
