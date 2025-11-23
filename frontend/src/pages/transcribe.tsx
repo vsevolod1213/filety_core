@@ -2,6 +2,8 @@ import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
 import FileUploader from "@/components/FileUploader";
+import { useAnonUser } from "@/context/AnonUserContext";
+import { formatDuration } from "@/lib/utils";
 
 const stats = [
   { label: "Файл", value: "до 2 ГБ" },
@@ -30,6 +32,10 @@ export default function TranscribePage() {
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { remainingSeconds, loading: anonLoading, error: anonError, refreshAnonUser } = useAnonUser();
+  const limitReached = typeof remainingSeconds === "number" && remainingSeconds <= 0;
+  const remainingText =
+    typeof remainingSeconds === "number" ? formatDuration(remainingSeconds) : "—";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -148,6 +154,35 @@ export default function TranscribePage() {
                 onUploadSuccess={handleUploadSuccess}
                 onUploadError={handleUploadError}
               />
+              <div className="rounded-3xl border border-white/30 bg-white/95 p-5 text-sm text-slate-900 shadow-xl dark:border-white/10 dark:bg-white/10 dark:text-white">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-slate-900 dark:text-white">Лимит бесплатной версии</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void refreshAnonUser({ force: true });
+                    }}
+                    className="text-xs font-semibold text-purple-600 transition hover:text-purple-400 disabled:opacity-40 dark:text-purple-200"
+                    disabled={anonLoading}
+                  >
+                    Обновить
+                  </button>
+                </div>
+                <p className="mt-2 text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-white/60">Сегодня осталось</p>
+                <p className={`mt-1 text-lg font-semibold ${limitReached ? "text-rose-600 dark:text-rose-400" : ""}`}>
+                  {anonLoading ? "Обновляем..." : limitReached ? "0 секунд" : remainingText}
+                </p>
+                {limitReached && !anonLoading && (
+                  <p className="mt-2 text-sm text-rose-600 dark:text-rose-300">
+                    Лимит исчерпан — авторизуйтесь или попробуйте завтра.
+                  </p>
+                )}
+                {anonError && !anonLoading && (
+                  <p className="mt-2 rounded-2xl bg-rose-100/60 px-3 py-2 text-xs text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">
+                    {anonError}
+                  </p>
+                )}
+              </div>
               {(resultText || error || processing) && (
                 <div className="rounded-[28px] border border-white/30 bg-white/95 p-5 text-sm text-slate-900 shadow-xl dark:border-white/10 dark:bg-white/10 dark:text-white">
                   <div className="flex items-center justify-between gap-3">

@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from "react";
-
+import { useAnonUser } from "@/context/AnonUserContext";
+import { API_BASE_URL } from "@/lib/api";
 
 type FileUploaderProps = {
   onUploadStart?: () => void;
@@ -9,7 +10,8 @@ type FileUploaderProps = {
 
 type UploadState = "idle" | "uploading" | "processing" | "done" | "error";
 
-const API_BASE = "https://api.filety.online";
+const LIMIT_MESSAGE =
+  "Лимит бесплатной версии на сегодня исчерпан. Авторизуйтесь или попробуйте завтра.";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -21,7 +23,7 @@ export async function uploadToServer(file: File) {
   const timeout = setTimeout(() => controller.abort(), 3 * 60 * 1000);
 
   try {
-    const startResponse = await fetch(`${API_BASE}/translate/start`, {
+    const startResponse = await fetch(`${API_BASE_URL}/translate/start`, {
       method: "POST",
       body: formData,
       signal: controller.signal
@@ -40,7 +42,7 @@ export async function uploadToServer(file: File) {
 
     while (true) {
       await delay(3500);
-      const statusResponse = await fetch(`${API_BASE}/translate/status?task_id=${taskId}`);
+      const statusResponse = await fetch(`${API_BASE_URL}/translate/status?task_id=${taskId}`);
       if (!statusResponse.ok) {
         const message = await statusResponse.text();
         throw new Error(message || "Failed to check status");
@@ -73,6 +75,8 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const { refreshAnonUser, remainingSeconds } = useAnonUser();
+  const limitReached = typeof remainingSeconds === "number" && remainingSeconds <= 0;
 
   const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -84,14 +88,29 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
   const processFile = async (file: File) => {
     setFileName(file.name);
     setFileSize(`${(file.size / (1024 * 1024)).toFixed(1)} МБ`);
-    setStatus("uploading");
     onUploadStart?.();
 
     try {
+      const anonState = await refreshAnonUser({ force: true });
+      if (!anonState) {
+        throw new Error("Не удалось получить данные анонимного пользователя");
+      }
+
+      const remaining = anonState.dailyLimitTime - anonState.dailyUsedTime;
+      if (remaining <= 0) {
+        setStatus("error");
+        onUploadError?.(LIMIT_MESSAGE);
+        return;
+      }
+
+      setStatus("uploading");
       const result = await uploadToServer(file);
       setStatus("processing");
       onUploadSuccess?.(result.transcription ?? "Нет текста. Попробуйте другой файл.");
       setStatus("done");
+      void refreshAnonUser({ force: true }).catch(() => {
+        // обновим лимит позже, ошибка уже залогирована внутри контекста
+      });
     } catch (error) {
       const message = (error as Error).message || "Ошибка при загрузке файла.";
       setStatus("error");
@@ -131,7 +150,7 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
           isDragging
             ? "border-brand-700 bg-brand-50/80 text-brand-700 shadow-lg shadow-brand-700/30"
             : "border-slate-300/60 bg-slate-50/70 text-slate-500 hover:border-brand-700/60"
-        }`}
+        } ${limitReached ? "opacity-60" : ""}`}
       >
         <svg width="48" height="48" fill="none" stroke="currentColor" className="mb-4 text-brand-700">
           <path strokeWidth="1.5" d="M24 10v28M12 24h24" />
@@ -191,6 +210,12 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
         {status === "done" && <p className="text-emerald-600 dark:text-emerald-400">{STATUS_TEXT.done}</p>}
 
         {status === "error" && <p className="text-rose-600 dark:text-rose-400">{STATUS_TEXT.error}</p>}
+
+        {limitReached && (
+          <p className="mt-2 text-xs font-medium text-rose-500 dark:text-rose-300">
+            {LIMIT_MESSAGE}
+          </p>
+        )}
       </div>
     </div>
   );

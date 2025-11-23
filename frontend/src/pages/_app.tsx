@@ -6,6 +6,7 @@ import "@/styles/globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
+import { AnonUserProvider } from "@/context/AnonUserContext";
 
 export default function App({ Component, pageProps }: AppProps) {
   const title = "Filety — транскрипция аудио и видео";
@@ -27,15 +28,17 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta name="twitter:card" content="summary_large_image" />
       </Head>
 
-      <ThemeProvider>
-        <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-50">
-          <Header />
-          <main className="flex-1">
-            <Component {...pageProps} />
-          </main>
-          <Footer />
-        </div>
-      </ThemeProvider>
+      <AnonUserProvider>
+        <ThemeProvider>
+          <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-50">
+            <Header />
+            <main className="flex-1">
+              <Component {...pageProps} />
+            </main>
+            <Footer />
+          </div>
+        </ThemeProvider>
+      </AnonUserProvider>
     </>
   );
 }
