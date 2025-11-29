@@ -13,6 +13,25 @@ import { authAnonymous, type AnonUserState } from "@/lib/api";
 
 const STORAGE_KEY = "filety_uuid";
 
+const readStoredUuid = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    console.warn("[AnonUser] Unable to read anon uuid from storage", error);
+    return null;
+  }
+};
+
+const writeStoredUuid = (uuid: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, uuid);
+  } catch (error) {
+    console.warn("[AnonUser] Unable to persist anon uuid", error);
+  }
+};
+
 type RefreshOptions = {
   force?: boolean;
 };
@@ -42,13 +61,9 @@ export function AnonUserProvider({ children }: { children: ReactNode }) {
   const inflightRef = useRef<Promise<AnonUserState | null> | null>(null);
 
   const fetchAnonUser = useCallback(async () => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const storedUuid = window.localStorage.getItem(STORAGE_KEY);
+    const storedUuid = readStoredUuid();
     const user = await authAnonymous(storedUuid);
-    window.localStorage.setItem(STORAGE_KEY, user.uuid);
+    writeStoredUuid(user.uuid);
     setAnonUser(user);
     setError(null);
     return user;
@@ -70,6 +85,7 @@ export function AnonUserProvider({ children }: { children: ReactNode }) {
           const message =
             err instanceof Error ? err.message : "Не удалось получить данные анонимного пользователя";
           setError(message);
+          setAnonUser(null);
           console.error("[AnonUser] Failed to fetch anonymous user state", err);
           throw err instanceof Error ? err : new Error(message);
         })

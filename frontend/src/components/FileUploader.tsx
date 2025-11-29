@@ -16,16 +16,10 @@ const LIMIT_MESSAGE =
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function uploadToServer(file: File) {
+export async function uploadToServer(file: File, anonUuid: string) {
   const formData = new FormData();
   formData.append("file", file);
-
-  if (typeof window !== "undefined") {
-    const anonUuid = window.localStorage.getItem("filety_uuid");
-    if (anonUuid) {
-      formData.append("anon_uuid", anonUuid);
-    }
-  }
+  formData.append("anon_uuid", anonUuid);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3 * 60 * 1000);
 
@@ -99,7 +93,7 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
 
     try {
       const anonState = await refreshAnonUser({ force: true });
-      if (!anonState) {
+      if (!anonState?.uuid) {
         throw new Error("Не удалось получить данные анонимного пользователя");
       }
 
@@ -111,7 +105,7 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
       }
 
       setStatus("uploading");
-      const result = await uploadToServer(file);
+      const result = await uploadToServer(file, anonState.uuid);
       setStatus("processing");
       onUploadSuccess?.(result.transcription ?? "Нет текста. Попробуйте другой файл.");
       setStatus("done");
