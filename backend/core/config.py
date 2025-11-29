@@ -13,6 +13,11 @@ class Settings:
         self.postgres_host = os.getenv("POSTGRES_HOST")
         self.postgres_port = os.getenv("POSTGRES_PORT")
 
+        self.jwt_secret_key = os.getenv("JWT_SECRET_TOKEN")
+        self.jwt_algorithm = os.getenv("JWT_ALGORITHM")
+        self.access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
+        self.refresh_token_expire_days = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30"))
+
     @property
     def database_url(self) -> str:
         return (

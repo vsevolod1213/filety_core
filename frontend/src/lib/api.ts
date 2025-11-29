@@ -1,5 +1,5 @@
 // frontend/src/lib/api.ts
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.filety.online";
+import { API_BASE_URL } from "@/lib/http";
 
 type ApiErrorPayload = {
   detail?: string;

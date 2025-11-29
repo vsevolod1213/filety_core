@@ -1,0 +1,151 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useRouter } from "next/router";
+import { ApiError, authClient, type User } from "@/lib/authClient";
+import { getAccessToken } from "@/lib/http";
+
+type AuthContextValue = {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<User>;
+  register: (email: string, password: string) => Promise<User>;
+  logout: () => Promise<void>;
+  logoutAll: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const redirectToLogin = useCallback(() => {
+    if (router.pathname.startsWith("/auth")) {
+      return;
+    }
+    void router.push("/auth/login");
+  }, [router]);
+
+  const fetchCurrentUser = useCallback(async () => {
+    const current = await authClient.getCurrentUser();
+    setUser(current);
+    return current;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let active = true;
+
+    const hydrate = async () => {
+      const token = getAccessToken();
+      if (!token) {
+        if (active) {
+          setLoading(false);
+        }
+        return;
+      }
+
+      setLoading(true);
+      try {
+        await fetchCurrentUser();
+      } catch (error) {
+        if (!active) return;
+        setUser(null);
+        if (error instanceof ApiError && error.status === 401) {
+          redirectToLogin();
+        } else {
+          console.error("[Auth] Failed to fetch current user", error);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void hydrate();
+
+    return () => {
+      active = false;
+    };
+  }, [fetchCurrentUser, redirectToLogin]);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      await authClient.login(email, password);
+      return fetchCurrentUser();
+    },
+    [fetchCurrentUser],
+  );
+
+  const register = useCallback(
+    async (email: string, password: string) => {
+      await authClient.register(email, password);
+      await authClient.login(email, password);
+      return fetchCurrentUser();
+    },
+    [fetchCurrentUser],
+  );
+
+  const logout = useCallback(async () => {
+    await authClient.logout();
+    setUser(null);
+    if (!router.pathname.startsWith("/auth")) {
+      void router.push("/auth/login");
+    }
+  }, [router]);
+
+  const logoutAll = useCallback(async () => {
+    await authClient.logoutAll();
+    setUser(null);
+    if (!router.pathname.startsWith("/auth")) {
+      void router.push("/auth/login");
+    }
+  }, [router]);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      return await fetchCurrentUser();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setUser(null);
+      }
+      return null;
+    }
+  }, [fetchCurrentUser]);
+
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      register,
+      logout,
+      logoutAll,
+      refreshUser,
+    }),
+    [user, loading, login, register, logout, logoutAll, refreshUser],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return ctx;
+}

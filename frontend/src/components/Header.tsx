@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
   { href: "/transcribe", label: "Транскрипция" },
@@ -10,17 +11,15 @@ const NAV_ITEMS = [
 
 export default function Header() {
   const { pathname } = useRouter();
+  const { user, loading } = useAuth();
   const headerRef = useRef<HTMLElement | null>(null);
   const navRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
-  const [userLabel] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return window.localStorage.getItem("filety-user");
-  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [hideHeader, setHideHeader] = useState(false);
   const lastScrollY = useRef(0);
+  const isAuthenticated = Boolean(user);
 
   const activeIndex = useMemo(
     () => NAV_ITEMS.findIndex(({ href }) => pathname.startsWith(href)),
@@ -137,14 +136,14 @@ export default function Header() {
             Инструменты
           </button>
 
-          {userLabel ? (
+          {isAuthenticated ? (
             <Link
               href="/account"
               className="hidden rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-purple-400 hover:text-purple-500 dark:border-slate-700 dark:text-slate-200 dark:hover:text-white sm:inline-flex"
             >
               Кабинет
             </Link>
-          ) : (
+          ) : !loading ? (
             <div className="hidden items-center gap-2 sm:flex">
               <Link
                 href="/auth/login"
@@ -159,7 +158,7 @@ export default function Header() {
                 Регистрация
               </Link>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -186,7 +185,7 @@ export default function Header() {
                 {label}
               </Link>
             ))}
-            {!userLabel && (
+            {!isAuthenticated && !loading && (
               <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 text-sm dark:border-slate-800">
                 <Link
                   href="/auth/login"

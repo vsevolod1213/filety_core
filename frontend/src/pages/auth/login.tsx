@@ -1,13 +1,46 @@
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/lib/authClient";
 
 export default function LoginPage() {
   const title = "Вход в Filety";
   const description = "Авторизуйтесь, чтобы управлять файлами и лимитами.";
+  const router = useRouter();
+  const { login } = useAuth();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
+    setSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      await login(email, password);
+      await router.push("/account");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 400 || error.status === 401) {
+          setErrorMessage(error.message);
+        } else if ((error.status ?? 0) >= 500) {
+          setErrorMessage("Произошла ошибка, попробуйте позже");
+        } else {
+          setErrorMessage(error.message);
+        }
+      } else {
+        setErrorMessage("Произошла ошибка, попробуйте позже");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -22,14 +55,15 @@ export default function LoginPage() {
           <h1 className="text-3xl font-semibold">Войти</h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">Продолжайте работу с файлами.</p>
 
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+          <form className="mt-8 space-y-4" onSubmit={handleSubmit} noValidate>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
               Email
               <input
                 type="email"
                 name="email"
                 required
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-purple-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                disabled={submitting}
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-purple-400 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </label>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -38,19 +72,22 @@ export default function LoginPage() {
                 type="password"
                 name="password"
                 required
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-purple-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                disabled={submitting}
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-purple-400 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </label>
             <button
               type="submit"
-              className="w-full rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-purple-600 dark:bg-white dark:text-slate-900"
+              disabled={submitting}
+              className="w-full rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-purple-600 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-slate-900"
             >
-              Войти
+              {submitting ? "Входим..." : "Войти"}
             </button>
+            {errorMessage && <p className="text-sm font-medium text-red-500">{errorMessage}</p>}
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-300">
-            Нет аккаунта? {" "}
+            Нет аккаунта?{" "}
             <Link href="/auth/register" className="text-purple-500">
               Зарегистрируйтесь
             </Link>
