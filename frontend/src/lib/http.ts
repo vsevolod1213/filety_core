@@ -1,6 +1,5 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
-
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.filety.online";
+import { API_BASE_URL } from "@/lib/api";
 
 const ACCESS_TOKEN_KEY = "filety_access_token";
 let accessToken: string | null = null;

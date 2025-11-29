@@ -1,5 +1,8 @@
 // frontend/src/lib/api.ts
-import { API_BASE_URL } from "@/lib/http";
+
+const DEFAULT_BASE_URL = process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://filety.ru";
+
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_BASE_URL;
 
 type ApiErrorPayload = {
   detail?: string;
