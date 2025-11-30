@@ -1,6 +1,12 @@
 # backend/fastapi_main.py
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
+from slowapi.middleware import SlowAPIMiddleware
+
 import asyncio
 from backend.transcription import which_file, TranscriptionError
 import os
@@ -28,8 +34,30 @@ TASKS_DIR = Path("/root/filety/backend/tasks")
 TASKS_DIR.mkdir(parents=True, exist_ok=True)
 TASKS: dict[str, dict] = {}
 
+limiter = Limiter(key_func = get_remote_address)
 app = FastAPI(title="Failety API")
 
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://filety.ru",
+        "https://www.filety.ru",
+        "https://filety-core.vercel.app",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.exception_handler(RateLimitExceeded)
+def ratelimit_handler(request, exc):
+    return JSONResponse(
+        status_code = 429,
+        content = {"detail": "Too many requests"}
+    )
 
 @app.get("/health")
 async def health_check():

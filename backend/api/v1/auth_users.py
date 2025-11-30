@@ -1,6 +1,8 @@
 #backend/api/v1/auth_users.py
 from datetime import datetime, timedelta, timezone
 import hashlib
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -20,8 +22,10 @@ from backend.schemas.auth import UserCreate, UserLogin, UserOut
 router = APIRouter(prefix = "/auth", tags = ["auth"])
 settings = get_settings()
 
+limiter = Limiter(key_func=get_remote_address)
+
 REFRESH_COOKIE_NAME = "refresh_token"
-REFRESH_COOKIE_PATH = "/auth"
+REFRESH_COOKIE_PATH = "/"
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -52,6 +56,7 @@ def get_current_user(
     return user
 
 @router.post("/register", response_model = UserOut, status_code = 201)
+@limiter.limit("3/minute")
 def register(data: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
@@ -67,6 +72,7 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
     return user
 
 @router.post("/login")
+@limiter.limit("5/minute")
 def login(
     data: UserLogin,
     request: Request,

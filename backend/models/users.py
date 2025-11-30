@@ -20,7 +20,7 @@ class User(Base):
         nullable=False
         )
     hashed_password: Mapped[str] = mapped_column(
-        String(255), 
+        String(512), 
         nullable=False
         )
     created_at: Mapped[datetime] = mapped_column(
