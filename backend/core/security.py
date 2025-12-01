@@ -1,13 +1,21 @@
 #backend/core/security.py
 from datetime import datetime, timedelta, timezone
 import jwt
+import passlib.handlers.bcrypt
 from passlib.context import CryptContext
 from typing import Any, Dict
 from backend.core.config import get_settings
 
+passlib.handlers.bcrypt._bcrypt = None
+
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt"], 
+    deprecated = "auto", 
+    bcrypt__ident="2b",
+    bcrypt__truncate_error=True
+    )
 
 def hashed_password(password: str) -> str:
     return pwd_context.hash(password)
