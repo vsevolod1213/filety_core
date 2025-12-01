@@ -242,7 +242,7 @@ export default function Header() {
                 key={href}
                 href={href}
                 onClick={() => setIsMenuOpen(false)}
-                className="mt-3 block rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-800"
+                className="mt-3 block rounded-2xl border border-slate-200 px-4 py-3 text-center text-sm font-semibold transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-800"
               >
                 {label}
               </Link>
@@ -261,7 +261,7 @@ export default function Header() {
           />
           <div
             className="fixed z-30 w-64 rounded-3xl border border-slate-200 bg-white/95 p-5 text-slate-900 shadow-2xl transition-all dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50"
-            style={{ top: headerHeight + 16, left: "50%", transform: "translateX(-50%)" }}
+            style={{ top: headerHeight + 16, right: 16 }}
           >
             <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Профиль</p>
             <Link
