@@ -5,15 +5,43 @@ export default function Document() {
   return (
     <Html lang="ru" dir="ltr">
       <Head>
-        {/* Фавиконки для разных тем и устройств */}
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/png" href="/icon1.png" media="(prefers-color-scheme: light)" />
-        <link rel="icon" type="image/svg+xml" href="/icon0.svg" media="(prefers-color-scheme: dark)" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
-
-        {/* PWA */}
+        {/* Статические фавиконки для поисковиков и всех браузеров */}
+        <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
+        <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="mask-icon" href="/icon-mask.svg" color="#111827" />
         <link rel="manifest" href="/site.webmanifest" />
-        <meta id="theme-color" name="theme-color" content="#f8fafc" />
+        <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+        {/* Динамическая подмена фавиконки для светлой/тёмной темы */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var light = '/favicon-light.png';
+                var dark = '/favicon-dark.png';
+                function setIcon(matches) {
+                  var link = document.querySelector('link[rel="icon"][data-dynamic="true"]');
+                  if (!link) {
+                    link = document.createElement('link');
+                    link.rel = 'icon';
+                    link.setAttribute('data-dynamic', 'true');
+                    document.head.appendChild(link);
+                  }
+                  link.href = matches ? dark : light;
+                }
+                var media = window.matchMedia('(prefers-color-scheme: dark)');
+                setIcon(media.matches);
+                if (media.addEventListener) {
+                  media.addEventListener('change', function(e) { setIcon(e.matches); });
+                } else if (media.addListener) {
+                  media.addListener(function(e) { setIcon(e.matches); });
+                }
+              })();
+            `,
+          }}
+        />
 
         {/* Быстрые соединения под шрифты/статик */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

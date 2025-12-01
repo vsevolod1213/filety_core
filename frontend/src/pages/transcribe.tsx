@@ -1,4 +1,3 @@
-// frontend/src/pages/transcribe.tsx
 import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
@@ -7,46 +6,56 @@ import { useAnonUser } from "@/context/AnonUserContext";
 import { formatDuration } from "@/lib/utils";
 
 const stats = [
-  { label: "Файл", value: "до 2 ГБ" },
-  { label: "Языки", value: "RU · EN" },
+  { label: "Размер файла", value: "до 2 ГБ" },
+  { label: "Поддерживаемые языки", value: "Русский · English" },
   { label: "Экспорт", value: "TXT · SRT · VTT" },
 ];
 
-const bullets = [
-  "Автоопределение громкости",
-  "Сохраняем таймкоды",
-  "Работаем с часовыми файлами",
+const highlights = [
+  "Отлавливаем шумы и автоматически выравниваем громкость",
+  "Сохраняем таймкоды и делим текст на говорящих",
+  "Работаем с многочасовыми лекциями, интервью и подкастами",
 ];
 
 const steps = [
-  { title: "1. Загрузка", text: "Перетащите аудио или видео. Проверим формат и размер." },
-  { title: "2. Обработка", text: "Сервер извлекает аудио, запускает faster-whisper и делит на сегменты." },
-  { title: "3. Результат", text: "Получаете текст, язык, длительность и готовые файлы для экспорта." },
+  { title: "1. Подготовка файла", text: "Перетащите аудио или видео в загрузчик. Поддерживаем все популярные форматы и автоматически проверяем размер." },
+  { title: "2. Обработка на сервере", text: "Filety извлекает звук, запускает Whisper и строит структуру речи — в браузере ничего не зависает." },
+  { title: "3. Готовый текст + экспорт", text: "Получаете очищенный текст, длительность, язык и ссылки на выгрузку в TXT, SRT или VTT." },
 ];
 
 export default function TranscribePage() {
-  const title = "Filety Транскрипция — аудио и видео в текст";
-  const description = "Загрузите запись и получите чистый текст с таймкодами и экспортом.";
+  const title = "Транскрипция аудио и видео в текст онлайн — Filety";
+  const description = "Быстрая и точная транскрипция аудио и видео. Бесплатный лимит, работа без регистрации, поддержка длинных файлов и экспорт в TXT/SRT/VTT.";
   const url = "https://filety.ru/transcribe";
-  const ogImage = "https://filety.ru/og.png";
+  const ogImage = "https://filety.ru/og-transcribe.png";
+
   const [resultText, setResultText] = useState("");
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
+
   const { remainingSeconds, loading: anonLoading, error: anonError, refreshAnonUser } = useAnonUser();
   const limitReached = typeof remainingSeconds === "number" && remainingSeconds <= 0;
-  const remainingText =
-    typeof remainingSeconds === "number" ? formatDuration(remainingSeconds) : "—";
+  const remainingText = typeof remainingSeconds === "number" ? formatDuration(remainingSeconds) : "—";
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: "Filety Transcribe",
+    serviceType: "Transcription",
+    category: ["Speech-to-Text", "Audio Transcription", "Video Transcription"],
+    name: "Filety — транскрипция аудио и видео",
     description,
     provider: { "@type": "Organization", name: "Filety", url: "https://filety.ru" },
-    areaServed: "RU",
+    offers: [
+      {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "RUB",
+        description: "Free daily limit. Paid plans available for long files.",
+      },
+    ],
     url,
-    offers: { "@type": "Offer", price: "0", priceCurrency: "RUB" },
+    areaServed: "RU",
   };
 
   const handleUploadStart = () => {
@@ -81,14 +90,14 @@ export default function TranscribePage() {
   const handleDownload = () => {
     if (!resultText) return;
     const blob = new Blob([resultText], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
+    const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
+    link.href = blobUrl;
     link.download = "filety-transcription.txt";
     document.body.appendChild(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(blobUrl);
   };
 
   return (
@@ -115,10 +124,10 @@ export default function TranscribePage() {
           <div className="container relative mx-auto grid gap-10 px-4 py-20 sm:py-24 lg:grid-cols-[1.1fr,0.9fr]">
             <div className="space-y-6">
               <p className="inline-flex items-center rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.4em]">Transcribe</p>
-              <h1 className="text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-                Загрузите файл — получите текст
-              </h1>
-              <p className="text-base text-white/80 sm:text-lg">Filety расшифровывает длинные записи, сохраняет структуру и выдаёт файлы для монтажа.</p>
+              <h1 className="text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">AI‑транскрипция под любые задачи</h1>
+              <p className="text-base text-white/80 sm:text-lg">
+                Filety превращает часы аудио и видео в структурированный текст. Сохраняем таймкоды, поддерживаем командную работу и упрощаем монтаж.
+              </p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {stats.map((stat) => (
                   <div key={stat.label} className="rounded-2xl bg-white/10 p-4">
@@ -128,9 +137,9 @@ export default function TranscribePage() {
                 ))}
               </div>
               <div className="flex flex-wrap gap-2 text-sm text-white/80">
-                {bullets.map((bullet) => (
-                  <span key={bullet} className="rounded-full border border-white/30 px-3 py-1">
-                    {bullet}
+                {highlights.map((item) => (
+                  <span key={item} className="rounded-full border border-white/30 px-3 py-1">
+                    {item}
                   </span>
                 ))}
               </div>
@@ -139,25 +148,23 @@ export default function TranscribePage() {
                   href="/pricing"
                   className="inline-flex items-center justify-center rounded-full border border-white/60 px-6 py-3 text-base font-semibold text-white transition hover:-translate-y-0.5"
                 >
-                  Посмотреть тарифы
+                  Открыть тарифы
                 </Link>
                 <Link
                   href="/convert"
                   className="inline-flex items-center justify-center rounded-full bg-white/10 px-6 py-3 text-base font-semibold text-white transition hover:-translate-y-0.5"
                 >
-                  Конвертация
+                  Перейти к конвертации
                 </Link>
               </div>
             </div>
+
             <div id="upload" className="space-y-4">
-              <FileUploader
-                onUploadStart={handleUploadStart}
-                onUploadSuccess={handleUploadSuccess}
-                onUploadError={handleUploadError}
-              />
+              <FileUploader onUploadStart={handleUploadStart} onUploadSuccess={handleUploadSuccess} onUploadError={handleUploadError} />
+
               <div className="rounded-3xl border border-white/30 bg-white/95 p-5 text-sm text-slate-900 shadow-xl dark:border-white/10 dark:bg-white/10 dark:text-white">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-slate-900 dark:text-white">Лимит бесплатной версии</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">Сколько осталось бесплатно</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -169,25 +176,22 @@ export default function TranscribePage() {
                     Обновить
                   </button>
                 </div>
-                <p className="mt-2 text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-white/60">Сегодня осталось</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-white/60">Сегодня доступно</p>
                 <p className={`mt-1 text-lg font-semibold ${limitReached ? "text-rose-600 dark:text-rose-400" : ""}`}>
-                  {anonLoading ? "Обновляем..." : limitReached ? "0 секунд" : remainingText}
+                  {anonLoading ? "Обновляем…" : limitReached ? "0 секунд" : remainingText}
                 </p>
                 {limitReached && !anonLoading && (
-                  <p className="mt-2 text-sm text-rose-600 dark:text-rose-300">
-                    Лимит исчерпан — авторизуйтесь или попробуйте завтра.
-                  </p>
+                  <p className="mt-2 text-sm text-rose-600 dark:text-rose-300">Лимит израсходован — войдите или приходите завтра.</p>
                 )}
                 {anonError && !anonLoading && (
-                  <p className="mt-2 rounded-2xl bg-rose-100/60 px-3 py-2 text-xs text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">
-                    {anonError}
-                  </p>
+                  <p className="mt-2 rounded-2xl bg-rose-100/60 px-3 py-2 text-xs text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">{anonError}</p>
                 )}
               </div>
+
               {(resultText || error || processing) && (
                 <div className="rounded-[28px] border border-white/30 bg-white/95 p-5 text-sm text-slate-900 shadow-xl dark:border-white/10 dark:bg-white/10 dark:text-white">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-slate-900 dark:text-white">Готовый текст</p>
+                    <p className="font-semibold text-slate-900 dark:text-white">Результат транскрипции</p>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -212,7 +216,7 @@ export default function TranscribePage() {
                     <div className="mt-4 flex flex-col items-center gap-2 text-sm text-slate-500 dark:text-slate-200">
                       <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-brand-700 shadow dark:bg-white/10">
                         <span className="h-3 w-3 animate-ping rounded-full bg-brand-600" />
-                        <span>Обрабатываем в Whisper…</span>
+                        <span>Преобразуем аудио в Whisper…</span>
                       </div>
                     </div>
                   )}
@@ -230,9 +234,7 @@ export default function TranscribePage() {
                   )}
 
                   {!processing && !resultText && !error && (
-                    <p className="mt-4 text-sm text-slate-500 dark:text-white/70">
-                      После загрузки покажем текст, длительность и ссылки на экспорт.
-                    </p>
+                    <p className="mt-4 text-sm text-slate-500 dark:text-white/70">После обработки здесь появится текст и ссылки на выгрузку.</p>
                   )}
                 </div>
               )}
@@ -251,6 +253,28 @@ export default function TranscribePage() {
                 <p className="mt-3 text-base text-slate-700 dark:text-slate-200">{step.text}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        {/* SEO-блок */}
+        <section className="border-t border-slate-200/60 bg-white py-16 dark:border-slate-800/60 dark:bg-slate-950">
+          <div className="container mx-auto max-w-3xl space-y-5 px-4 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+            <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Filety — цифровой помощник для работы с аудио и видео</h2>
+            <p>
+              Транскрибировать запись вручную сложно: нужно перематывать, ставить паузы, следить за таймкодами. Filety автоматизирует эту работу. Сервис
+              безопасно принимает файлы до нескольких гигабайт, поддерживает лекции, подкасты, интервью, созвоны и документальные проекты. Каждая запись
+              проходит через Whisper и дополнительные фильтры — результат получается чистым и готовым к публикации или монтажу.
+            </p>
+            <p>
+              Filety подходит журналистам, монтажёрам, продюсерам, студентам, исследователям и всем, кто работает с устной речью. Бесплатный дневной лимит
+              позволяет быстро протестировать качество, а платные тарифы расширяют лимиты и открывают командные возможности. Экспорт в TXT, SRT или VTT
+              помогает сразу отправить текст в монтажную программу, LMS или корпоративный портал.
+            </p>
+            <p>
+              Попробуйте загрузить любой файл: обработка происходит на сервере, поэтому интерфейс остаётся отзывчивым. Filety запоминает прогресс
+              и отображает готовый текст, чтобы вы могли скопировать его или скачать в нужном формате. Чем больше проектов вы ведёте, тем заметнее экономия
+              времени — Filety убирает рутину и позволяет сосредоточиться на содержании.
+            </p>
           </div>
         </section>
       </main>
