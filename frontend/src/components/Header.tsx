@@ -288,6 +288,37 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      {!loading && !isAuthenticated && isAccountMenuOpen && (
+        <div className="sm:hidden">
+          <div
+            className="fixed inset-x-0 z-20 bg-slate-900/40 backdrop-blur-sm"
+            style={{ top: headerHeight }}
+            onClick={() => setIsAccountMenuOpen(false)}
+            aria-hidden
+          />
+          <div
+            className="fixed z-30 w-64 rounded-3xl border border-slate-200 bg-white/95 p-5 text-slate-900 shadow-2xl transition-all dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50"
+            style={{ top: headerHeight + 16, left: "50%", transform: "translateX(-50%)" }}
+          >
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Профиль</p>
+            <Link
+              href="/auth/login"
+              onClick={() => setIsAccountMenuOpen(false)}
+              className="mt-3 block rounded-2xl border border-slate-200 px-4 py-3 text-center text-sm font-semibold transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-800"
+            >
+              Войти
+            </Link>
+            <Link
+              href="/auth/register"
+              onClick={() => setIsAccountMenuOpen(false)}
+              className="mt-3 block rounded-2xl border border-slate-200 px-4 py-3 text-center text-sm font-semibold transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-800"
+            >
+              Регистрация
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
