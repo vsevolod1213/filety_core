@@ -120,18 +120,20 @@ export default function Header() {
       <div className="container relative mx-auto flex items-center justify-between gap-4 px-4 py-4">
         <Link
           href="/"
-          className="inline-flex items-center rounded-full px-10 py-5 text-lg font-semibold tracking-tight text-slate-900 transition hover:text-purple-500 dark:text-white dark:hover:text-purple-300"
+          className="inline-flex items-center rounded-full pl-0 pr-4 py-5 text-lg font-semibold tracking-tight text-slate-900 transition hover:text-purple-500 dark:text-white dark:hover:text-purple-300 sm:px-10"
         >
           Filety
         </Link>
 
-        <button
-          type="button"
-          onClick={handleToolToggle}
-          className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 sm:hidden"
-        >
-          Инструменты
-        </button>
+        <div className="absolute inset-0 flex items-center justify-center sm:hidden">
+          <button
+            type="button"
+            onClick={handleToolToggle}
+            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-purple-400 hover:text-purple-500 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          >
+            Инструменты
+          </button>
+        </div>
 
         <nav className="relative hidden items-center gap-2 rounded-full border border-slate-200/60 bg-slate-100/60 px-1 py-1 dark:border-slate-800/60 dark:bg-slate-900/60 sm:flex">
           <span
