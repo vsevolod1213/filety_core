@@ -124,19 +124,16 @@ export default function Header() {
       }`}
     >
       <div className="container relative mx-auto flex items-center justify-between gap-4 px-4 py-4">
-        <button
-          type="button"
+        <Link
+          href="/"
           onClick={() => {
             setIsMenuOpen(false);
             setIsAccountMenuOpen(false);
-            if (pathname !== "/") {
-              void router.push("/");
-            }
           }}
           className="inline-flex items-center rounded-full border border-transparent pl-0 pr-4 py-5 text-lg font-semibold tracking-tight text-slate-900 transition hover:text-purple-500 dark:text-white dark:hover:text-purple-300 sm:border-none sm:px-10"
         >
           Filety
-        </button>
+        </Link>
 
         <div className="absolute inset-0 flex items-center justify-center sm:hidden">
           <button

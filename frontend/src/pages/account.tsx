@@ -23,7 +23,7 @@ export default function AccountPage() {
         <title>Личный кабинет</title>
       </Head>
 
-      <main className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col gap-6 px-4 py-12">
+      <main className="mx-auto flex min-h-[70vh] w-full max-w-3xl flex-col gap-6 bg-slate-50 px-4 py-12 dark:bg-slate-950">
         {loading && (
           <div className="rounded-3xl border border-slate-200 bg-white/80 p-8 text-center text-slate-500 shadow-lg dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
             Загружаем данные профиля...
