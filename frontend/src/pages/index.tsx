@@ -32,6 +32,21 @@ export default function Home() {
   const title = "Filety — быстрые инструменты для аудио и видео";
   const description = "Транскрибируйте и конвертируйте файлы онлайн. Минимальный интерфейс, точный результат.";
   const url = "https://filety.ru";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Filety",
+    url,
+    description,
+    logo: "https://filety.ru/logo.png",
+    sameAs: ["https://t.me/filety"],
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: "hi@filety.ru",
+      contactType: "customer support",
+      availableLanguage: ["Russian", "English"],
+    },
+  };
 
   return (
     <>
@@ -46,6 +61,7 @@ export default function Home() {
         <meta property="og:url" content={url} />
         <meta property="og:image" content="https://filety.ru/og.png" />
         <meta name="twitter:card" content="summary_large_image" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </Head>
 
       <main className="bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-50">
@@ -144,4 +160,8 @@ export default function Home() {
       </main>
     </>
   );
+}
+
+export async function getServerSideProps() {
+  return { props: {} };
 }

@@ -111,3 +111,7 @@ export default function PricingPage() {
     </>
   );
 }
+
+export async function getServerSideProps() {
+  return { props: {} };
+}

@@ -257,3 +257,7 @@ export default function TranscribePage() {
     </>
   );
 }
+
+export async function getServerSideProps() {
+  return { props: {} };
+}

@@ -8,6 +8,8 @@ import { ApiError } from "@/lib/auth";
 export default function RegisterPage() {
   const title = "Регистрация Filety";
   const description = "Создайте аккаунт, чтобы транскрибировать и конвертировать файлы.";
+  const url = "https://filety.ru/auth/register";
+  const ogImage = "https://filety.ru/og.png";
   const router = useRouter();
   const { register } = useAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -69,6 +71,13 @@ export default function RegisterPage() {
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
+        <link rel="canonical" href={url} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={url} />
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:card" content="summary_large_image" />
       </Head>
 
       <main className="flex min-h-[80vh] items-center justify-center bg-white px-4 py-16 text-slate-900 dark:bg-slate-950 dark:text-slate-50">

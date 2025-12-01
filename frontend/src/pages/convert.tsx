@@ -111,3 +111,7 @@ export default function ConvertPage() {
     </>
   );
 }
+
+export async function getServerSideProps() {
+  return { props: {} };
+}
