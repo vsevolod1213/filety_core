@@ -2,8 +2,8 @@ import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
 import FileUploader from "@/components/FileUploader";
-import { useAnonUser } from "@/context/AnonUserContext";
-import { formatDuration } from "@/lib/utils";
+import { useUsage } from "@/hooks/useUsage";
+import { isUsageDepleted } from "@/lib/usage";
 
 const stats = [
   { label: "Размер файла", value: "до 20 МБ" },
@@ -34,9 +34,23 @@ export default function TranscribePage() {
   const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const { remainingSeconds, loading: anonLoading, error: anonError, refreshAnonUser } = useAnonUser();
-  const limitReached = typeof remainingSeconds === "number" && remainingSeconds <= 0;
-  const remainingText = typeof remainingSeconds === "number" ? formatDuration(remainingSeconds) : "—";
+  const { usage, loading: usageLoading, anonError, refreshUsage } = useUsage();
+  const limitReached = isUsageDepleted(usage);
+  const remainingText =
+    usage.source === "unlimited"
+      ? "Без лимита"
+      : usage.source === "unknown"
+        ? "—"
+        : `${usage.remainingMinutes} мин`;
+  const usageSourceLabel =
+    usage.source === "user"
+      ? "Лимит аккаунта"
+      : usage.source === "unlimited"
+        ? "Премиум аккаунт"
+        : usage.source === "anon"
+          ? "Анонимный лимит"
+          : "Недоступно";
+  const showAnonError = Boolean(anonError && usage.source !== "user" && usage.source !== "unlimited");
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -168,22 +182,25 @@ export default function TranscribePage() {
                   <button
                     type="button"
                     onClick={() => {
-                      void refreshAnonUser({ force: true });
+                      void refreshUsage({ force: true }).catch(() => {
+                        // ошибки уже отображаются в блоке
+                      });
                     }}
                     className="text-xs font-semibold text-purple-600 transition hover:text-purple-400 disabled:opacity-40 dark:text-purple-200"
-                    disabled={anonLoading}
+                    disabled={usageLoading}
                   >
                     Обновить
                   </button>
                 </div>
                 <p className="mt-2 text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-white/60">Сегодня доступно</p>
                 <p className={`mt-1 text-lg font-semibold ${limitReached ? "text-rose-600 dark:text-rose-400" : ""}`}>
-                  {anonLoading ? "Обновляем…" : limitReached ? "0 секунд" : remainingText}
+                  {usageLoading ? "Обновляем…" : limitReached ? "0 мин" : remainingText}
                 </p>
-                {limitReached && !anonLoading && (
-                  <p className="mt-2 text-sm text-rose-600 dark:text-rose-300">Лимит израсходован — войдите или приходите завтра.</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-white/70">{usageLoading ? "—" : usageSourceLabel}</p>
+                {limitReached && !usageLoading && (
+                  <p className="mt-2 text-sm text-rose-600 dark:text-rose-300">Лимит израсходован — обновите тариф или попробуйте завтра.</p>
                 )}
-                {anonError && !anonLoading && (
+                {showAnonError && !usageLoading && (
                   <p className="mt-2 rounded-2xl bg-rose-100/60 px-3 py-2 text-xs text-rose-700 dark:bg-rose-500/20 dark:text-rose-200">{anonError}</p>
                 )}
               </div>

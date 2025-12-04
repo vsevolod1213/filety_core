@@ -1,7 +1,8 @@
 // frontend/src/components/FileUploader.tsx
 import { useId, useRef, useState } from "react";
-import { useAnonUser } from "@/context/AnonUserContext";
+import { useUsage } from "@/hooks/useUsage";
 import { API_BASE_URL } from "@/lib/api";
+import { computeUsage, isUsageDepleted } from "@/lib/usage";
 
 type FileUploaderProps = {
   onUploadStart?: () => void;
@@ -11,8 +12,7 @@ type FileUploaderProps = {
 
 type UploadState = "idle" | "uploading" | "processing" | "done" | "error";
 
-const LIMIT_MESSAGE =
-  "Лимит бесплатной версии на сегодня исчерпан. Авторизуйтесь или попробуйте завтра.";
+const LIMIT_MESSAGE = "Дневной лимит на сегодня исчерпан. Обновите тариф или попробуйте завтра.";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -76,8 +76,8 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const { refreshAnonUser, remainingSeconds } = useAnonUser();
-  const limitReached = typeof remainingSeconds === "number" && remainingSeconds <= 0;
+  const { usage, refreshUsage, anonUser, user } = useUsage();
+  const limitReached = isUsageDepleted(usage);
 
   const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -92,13 +92,26 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
     onUploadStart?.();
 
     try {
-      const anonState = await refreshAnonUser({ force: true });
+      let anonState = anonUser;
+      let userState = user;
+      try {
+        const refreshed = await refreshUsage({ force: true });
+        if (refreshed.anon) {
+          anonState = refreshed.anon;
+        }
+        if (refreshed.user) {
+          userState = refreshed.user;
+        }
+      } catch (refreshError) {
+        console.error("[Usage] Failed to refresh quota before upload", refreshError);
+      }
+
       if (!anonState?.uuid) {
         throw new Error("Не удалось получить данные анонимного пользователя");
       }
 
-      const remaining = anonState.dailyLimitTime - anonState.dailyUsedTime;
-      if (remaining <= 0) {
+      const latestUsage = computeUsage({ anon: anonState, user: userState });
+      if (isUsageDepleted(latestUsage)) {
         setStatus("error");
         onUploadError?.(LIMIT_MESSAGE);
         return;
@@ -109,8 +122,8 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
       setStatus("processing");
       onUploadSuccess?.(result.transcription ?? "Нет текста. Попробуйте другой файл.");
       setStatus("done");
-      void refreshAnonUser({ force: true }).catch(() => {
-        // обновим лимит позже, ошибка уже залогирована внутри контекста
+      void refreshUsage({ force: true }).catch(() => {
+        // обновим лимит позже, ошибки логируются внутри контекстов/хуков
       });
     } catch (error) {
       const message = (error as Error).message || "Ошибка при загрузке файла.";
