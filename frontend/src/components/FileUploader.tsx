@@ -13,18 +13,26 @@ type FileUploaderProps = {
 
 type UploadState = "idle" | "uploading" | "processing" | "done" | "error";
 
-const LIMIT_MESSAGE = "Дневной лимит на сегодня исчерпан. Обновите тариф или попробуйте завтра.";
+const LIMIT_MESSAGE =
+  "Запись длиннее доступного лимита. Сократите файл или обновите тариф, чтобы продолжить расшифровку.";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function uploadToServer(file: File, anonUuid: string) {
+type UploadPhase = Extract<UploadState, "uploading" | "processing">;
+
+export async function uploadToServer(
+  file: File,
+  anonUuid: string,
+  onPhaseChange?: (phase: UploadPhase) => void,
+) {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("anon_uuid", anonUuid);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3 * 60 * 1000);
   const token = getAccessToken();
-  
+  onPhaseChange?.("uploading");
+
   try {
     const startResponse = await fetch(`${API_BASE_URL}/translate/start`, {
       method: "POST",
@@ -39,6 +47,7 @@ export async function uploadToServer(file: File, anonUuid: string) {
     }
 
     const data = await startResponse.json();
+    onPhaseChange?.("processing");
     const taskId = data.task_id;
     if (!taskId) {
       throw new Error("task_id is missing in response");
@@ -67,7 +76,7 @@ export async function uploadToServer(file: File, anonUuid: string) {
 const STATUS_TEXT: Record<UploadState, string> = {
   idle: "Выберите аудио или видео, чтобы начать.",
   uploading: "Файл загружается на сервер…",
-  processing: "Обработка на сервере…",
+  processing: "Преобразуем аудио в текст…",
   done: "Готово! Расшифровка получена.",
   error: "Не удалось загрузить файл. Попробуйте снова.",
 };
@@ -76,6 +85,7 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState<UploadState>("idle");
+  const [statusErrorMessage, setStatusErrorMessage] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -93,6 +103,7 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
     setFileName(file.name);
     setFileSize(`${(file.size / (1024 * 1024)).toFixed(1)} МБ`);
     onUploadStart?.();
+    setStatusErrorMessage(null);
 
     try {
       let anonState = anonUser;
@@ -116,22 +127,28 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
       const latestUsage = computeUsage({ anon: anonState, user: userState });
       if (isUsageDepleted(latestUsage)) {
         setStatus("error");
+        setStatusErrorMessage(LIMIT_MESSAGE);
         onUploadError?.(LIMIT_MESSAGE);
         return;
       }
 
       setStatus("uploading");
-      const result = await uploadToServer(file, anonState.uuid);
-      setStatus("processing");
+      const result = await uploadToServer(file, anonState.uuid, (phase) => {
+        setStatus(phase);
+      });
       onUploadSuccess?.(result.transcription ?? "Нет текста. Попробуйте другой файл.");
       setStatus("done");
       void refreshUsage({ force: true }).catch(() => {
         // обновим лимит позже, ошибки логируются внутри контекстов/хуков
       });
     } catch (error) {
-      const message = (error as Error).message || "Ошибка при загрузке файла.";
+      const rawMessage = (error as Error).message || "Ошибка при загрузке файла.";
+      const friendlyMessage = /daily limit/i.test(rawMessage)
+        ? "Файл не помещается в оставшийся лимит. Сократите запись или обновите тариф."
+        : rawMessage;
       setStatus("error");
-      onUploadError?.(message);
+      setStatusErrorMessage(friendlyMessage);
+      onUploadError?.(friendlyMessage);
     }
   };
 
@@ -218,15 +235,17 @@ export default function FileUploader({ onUploadStart, onUploadSuccess, onUploadE
         )}
 
         {status === "processing" && (
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-brand-700 shadow dark:bg-white/10">
+          <div className="flex flex-col items-center gap-2">
             <span className="h-2 w-2 animate-ping rounded-full bg-brand-600" />
-            <span>{STATUS_TEXT.processing}</span>
+            <p className="font-medium text-brand-700">{STATUS_TEXT.processing}</p>
           </div>
         )}
 
         {status === "done" && <p className="text-emerald-600 dark:text-emerald-400">{STATUS_TEXT.done}</p>}
 
-        {status === "error" && <p className="text-rose-600 dark:text-rose-400">{STATUS_TEXT.error}</p>}
+        {status === "error" && (
+          <p className="text-rose-600 dark:text-rose-400">{statusErrorMessage ?? STATUS_TEXT.error}</p>
+        )}
 
         {limitReached && (
           <p className="mt-2 text-xs font-medium text-rose-500 dark:text-rose-300">

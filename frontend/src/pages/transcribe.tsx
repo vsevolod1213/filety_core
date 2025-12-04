@@ -4,6 +4,7 @@ import { useState } from "react";
 import FileUploader from "@/components/FileUploader";
 import { useUsage } from "@/hooks/useUsage";
 import { isUsageDepleted } from "@/lib/usage";
+import { formatDuration } from "@/lib/utils";
 
 const stats = [
   { label: "Размер файла", value: "до 20 МБ" },
@@ -31,7 +32,6 @@ export default function TranscribePage() {
 
   const [resultText, setResultText] = useState("");
   const [error, setError] = useState("");
-  const [processing, setProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const { usage, loading: usageLoading, anonError, refreshUsage } = useUsage();
@@ -41,7 +41,7 @@ export default function TranscribePage() {
       ? "Без лимита"
       : usage.source === "unknown"
         ? "—"
-        : `${usage.remainingMinutes} мин`;
+        : formatDuration(usage.remainingSeconds);
   const usageSourceLabel =
     usage.source === "user"
       ? "Лимит аккаунта"
@@ -76,18 +76,16 @@ export default function TranscribePage() {
     setResultText("");
     setError("");
     setCopied(false);
-    setProcessing(true);
   };
 
   const handleUploadSuccess = (text: string) => {
+    setError("");
     setResultText(text);
-    setProcessing(false);
   };
 
   const handleUploadError = (message: string) => {
     setResultText("");
     setError(message);
-    setProcessing(false);
   };
 
   const handleCopy = async () => {
@@ -205,8 +203,8 @@ export default function TranscribePage() {
                 )}
               </div>
 
-              {(resultText || error || processing) && (
-                <div className="rounded-[28px] border border-white/30 bg-white/95 p-5 text-sm text-slate-900 shadow-xl dark:border-white/10 dark:bg-white/10 dark:text-white">
+              {(resultText || error) && (
+                <div className="w-full rounded-[28px] border border-white/30 bg-white/95 p-5 text-sm text-slate-900 shadow-xl dark:border-white/10 dark:bg-white/10 dark:text-white">
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-semibold text-slate-900 dark:text-white">Результат транскрипции</p>
                     <div className="flex gap-2">
@@ -229,15 +227,6 @@ export default function TranscribePage() {
                     </div>
                   </div>
 
-                  {processing && !resultText && !error && (
-                    <div className="mt-4 flex flex-col items-center gap-2 text-sm text-slate-500 dark:text-slate-200">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-brand-700 shadow dark:bg-white/10">
-                        <span className="h-3 w-3 animate-ping rounded-full bg-brand-600" />
-                        <span>Преобразуем аудио в Whisper…</span>
-                      </div>
-                    </div>
-                  )}
-
                   {error && (
                     <p className="mt-4 rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/20 dark:text-rose-200">
                       {error}
@@ -245,13 +234,9 @@ export default function TranscribePage() {
                   )}
 
                   {resultText && (
-                    <div className="mt-4 max-h-64 overflow-y-auto rounded-2xl border border-slate-200/80 bg-white/70 p-4 text-sm leading-relaxed shadow-inner dark:border-white/20 dark:bg-white/5">
-                      <p className="whitespace-pre-line">{resultText}</p>
+                    <div className="mt-4 rounded-2xl border border-slate-200/80 bg-white/70 p-4 text-sm leading-relaxed shadow-inner dark:border-white/20 dark:bg-white/5">
+                      <p className="whitespace-pre-wrap break-words">{resultText}</p>
                     </div>
-                  )}
-
-                  {!processing && !resultText && !error && (
-                    <p className="mt-4 text-sm text-slate-500 dark:text-white/70">После обработки здесь появится текст и ссылки на выгрузку.</p>
                   )}
                 </div>
               )}
