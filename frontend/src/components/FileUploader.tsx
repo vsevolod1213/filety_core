@@ -2,6 +2,7 @@
 import { useId, useRef, useState } from "react";
 import { useUsage } from "@/hooks/useUsage";
 import { API_BASE_URL } from "@/lib/api";
+import { getAccessToken } from "@/lib/auth";
 import { computeUsage, isUsageDepleted } from "@/lib/usage";
 
 type FileUploaderProps = {
@@ -22,12 +23,14 @@ export async function uploadToServer(file: File, anonUuid: string) {
   formData.append("anon_uuid", anonUuid);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3 * 60 * 1000);
-
+  const token = getAccessToken();
+  
   try {
     const startResponse = await fetch(`${API_BASE_URL}/translate/start`, {
       method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: formData,
-      signal: controller.signal
+      signal: controller.signal,
     });
 
     if (!startResponse.ok) {

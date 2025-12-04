@@ -120,6 +120,10 @@ export const hydrateAccessToken = () => {
   accessToken = window.localStorage.getItem(ACCESS_TOKEN_KEY);
   isHydrated = true;
 };
+export const getAccessToken = (): string | null => {
+  hydrateAccessToken();
+  return accessToken;
+};
 
 const refreshAccessToken = async () => {
   if (refreshPromise) {
