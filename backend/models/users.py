@@ -1,7 +1,7 @@
 # backend/models/users.py
-from sqlalchemy import String, DateTime, Integer
+from sqlalchemy import String, DateTime, Integer, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, TYPE_CHECKING
 from backend.db.session import Base
 if TYPE_CHECKING:
@@ -37,6 +37,10 @@ class User(Base):
         Integer,
         nullable=False,
         default=0
+        )
+    relevant_day: Mapped[date] = mapped_column(
+        Date,
+        nullable=True
         )
     transcription_tasks: Mapped[List["TranscriptionTask"]] = relationship(
         back_populates="user", 

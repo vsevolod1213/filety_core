@@ -18,6 +18,7 @@ from backend.core.config import get_settings
 from backend.models.users import User
 from backend.models.refresh_sessions import RefreshSession
 from backend.schemas.auth import UserCreate, UserLogin, UserOut
+from backend.core.relevant_day import is_relevant_day
 
 router = APIRouter(prefix = "/auth", tags = ["auth"])
 settings = get_settings()
@@ -54,6 +55,9 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail="User not found")
     
+    is_relevant_day(user)
+    db.commit()
+
     return user
 def get_current_user_optional(
     creds: HTTPAuthorizationCredentials | None = Security(auth_scheme_optional),
@@ -73,6 +77,12 @@ def get_current_user_optional(
     
     user_id = int(payload["sub"])
     user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return None
+    
+    is_relevant_day(user)
+    db.commit()
+
     return user
 
 @router.post("/register", response_model = UserOut, status_code = 201)
