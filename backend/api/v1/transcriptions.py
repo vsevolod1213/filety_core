@@ -18,37 +18,39 @@ def recent_transcriptions(
     user = Depends(get_current_user_optional)
     ):
     tasks = []
-
-    if anon_uuid and user is None:
+    if user is not None:
+        stmt = (
+            select(TranscriptionTask)
+            .where(TranscriptionTask.user_id == user.id)
+            .order_by(TranscriptionTask.created_at.desc())
+        )
+        tasks = db.execute(stmt).scalars().all()
+        
+    elif anon_uuid is not None:
         try:
             anon_uuid_obj = UUID_cls(anon_uuid)
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid anon user UUID")
 
-        anon = db.execute(
-            select(AnonUser).where(AnonUser.uuid == anon_uuid_obj)
-            ).scalars().first()
+        anon = (
+            db.execute(
+                select(AnonUser).where(AnonUser.uuid == anon_uuid_obj)
+            )
+            .scalars()
+            .first()
+        )
 
         if anon:
-            stmb = (select(
-                TranscriptionTask
-                ).where(
-                TranscriptionTask.anon_user_id == anon.id
-                ).order_by(
-                    TranscriptionTask.created_at.desc()
-                    ))
-            tasks = db.execute(stmb).scalars().all()
-            
-    else:
-        stmb = (select(
-            TranscriptionTask
-            ).where(
-            TranscriptionTask.user_id == user.id
-            ).order_by(
-                TranscriptionTask.created_at.desc()
-                ))
-        tasks = db.execute(stmb).scalars().all()
-
+            stmt = (
+                select(TranscriptionTask)
+                .where(
+                    TranscriptionTask.anon_user_id == anon.id,
+                    TranscriptionTask.user_id.is_(None),  # ← критично
+                )
+                .order_by(TranscriptionTask.created_at.desc())
+            )
+            tasks = db.execute(stmt).scalars().all()
+    
     result: list[TranscriptionItem] = []
     for task in tasks:
         result.append(TranscriptionItem(
