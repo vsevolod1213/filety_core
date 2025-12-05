@@ -11,11 +11,14 @@ from backend.transcription import which_file, TranscriptionError
 import os
 import uuid
 from pathlib import Path
-from backend.api.v1.health import router as health_db
 from backend.db.session import engine
 from backend.db.base import Base
+
+from backend.api.v1.health import router as health_db
 from backend.api.v1.auth_anonymous import router as auth_anonymous_router
 from backend.api.v1.auth_users import router as auth_users_router
+from backend.api.v1.transcriptions import router as transcriptions_router
+
 import subprocess
 from backend.db.session import SessionLocal
 from backend.models.transcription_tasks import TranscriptionStatus, TranscriptionTask
@@ -350,6 +353,7 @@ def on_startup():
 app.include_router(health_db)
 app.include_router(auth_anonymous_router)
 app.include_router(auth_users_router)
+app.include_router(transcriptions_router)
 
 @app.on_event("startup")
 async def startup_cleanup_task():

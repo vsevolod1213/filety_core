@@ -2,6 +2,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
 import FileUploader from "@/components/FileUploader";
+import RecentTranscriptions from "@/components/RecentTranscriptions";
 import { useUsage } from "@/hooks/useUsage";
 import { isUsageDepleted } from "@/lib/usage";
 import { formatDuration } from "@/lib/utils";
@@ -245,6 +246,8 @@ export default function TranscribePage() {
             )}
           </div>
         </section>
+
+        <RecentTranscriptions />
 
         <section className="border-b border-slate-200/60 bg-white py-12 dark:border-slate-800/60 dark:bg-slate-950">
           <div className="container mx-auto space-y-4 px-4 text-slate-700 dark:text-slate-200">
