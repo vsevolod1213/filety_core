@@ -29,7 +29,7 @@ def recent_transcriptions(
                 ))
         tasks = db.execute(stmb).scalars().all()
 
-    elif anon_uuid:
+    elif anon_uuid and user is None:
         try:
             anon_uuid_obj = UUID_cls(anon_uuid)
         except ValueError:
