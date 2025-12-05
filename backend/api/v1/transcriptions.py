@@ -19,17 +19,7 @@ def recent_transcriptions(
     ):
     tasks = []
 
-    if user is not None:
-        stmb = (select(
-            TranscriptionTask
-            ).where(
-            TranscriptionTask.user_id == user.id
-            ).order_by(
-                TranscriptionTask.created_at.desc()
-                ))
-        tasks = db.execute(stmb).scalars().all()
-
-    elif anon_uuid and user is None:
+    if anon_uuid and user is None:
         try:
             anon_uuid_obj = UUID_cls(anon_uuid)
         except ValueError:
@@ -48,7 +38,17 @@ def recent_transcriptions(
                     TranscriptionTask.created_at.desc()
                     ))
             tasks = db.execute(stmb).scalars().all()
-    
+            
+    elif user is not None:
+        stmb = (select(
+            TranscriptionTask
+            ).where(
+            TranscriptionTask.user_id == user.id
+            ).order_by(
+                TranscriptionTask.created_at.desc()
+                ))
+        tasks = db.execute(stmb).scalars().all()
+
     result: list[TranscriptionItem] = []
     for task in tasks:
         result.append(TranscriptionItem(
