@@ -209,7 +209,7 @@ def logout(
                     ).first()
                 )
                 if session:
-                    session.is_revoked = True
+                    db.delete(session)
                     db.commit()
         except Exception:
             pass
@@ -224,9 +224,8 @@ def logout_all(
     db: Session = Depends(get_db)
 ):
     db.query(RefreshSession).filter(
-        RefreshSession.user_id == current_user.id,
-        RefreshSession.is_revoked == False
-    ).update({"is_revoked": True})
+        RefreshSession.user_id == current_user.id
+    ).delete(synchronize_session = False)
     db.commit()
 
     if response is not None:
