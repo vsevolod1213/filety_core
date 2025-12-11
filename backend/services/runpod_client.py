@@ -4,6 +4,8 @@ import os
 import base64
 import httpx
 from backend.core.config import get_settings
+import boto3
+from uuid import uuid4
 
 settings = get_settings()
 RUNPOD_API = settings.runpod_api
@@ -11,6 +13,21 @@ RUNPOD_ID = settings.runpod_id
 
 RUNPOD_RUN_URL = f"https://api.runpod.ai/v2/{RUNPOD_ID}/run"
 RUNPOD_STATUS_URL = f"https://api.runpod.ai/v2/{RUNPOD_ID}/status"
+
+if not all([
+    settings.s3_access_id,
+    settings.s3_access_secret,
+    settings.s3_bucket_name,
+    settings.s3_endpoint_url,
+]):
+    raise RuntimeError("S3 config is not fully set in environment variables")
+
+s3_client = boto3.client(
+    's3',  
+    aws_access_key_id=settings.s3_access_id,
+    aws_secret_access_key=settings.s3_access_secret,
+    endpoint_url=settings.s3_endpoint_url,
+)
 
 class RunpodError(Exception):
     pass
@@ -23,10 +40,8 @@ async def submit_audio_job(
     ) -> str:
     file_name = os.path.basename(audio_path)
 
-    with open(audio_path, "rb") as audio_file:
-        bynary = audio_file.read()
-
-    audio_b64 = base64.b64encode(bynary).decode('utf-8')
+    object_key = f"audio_inputs/{task_id}/{uuid4().hex}_{file_name}"
+    s3_client.upload_file(audio_path, settings.s3_bucket_name, object_key)
 
     payload = {
         "input": {
@@ -34,9 +49,16 @@ async def submit_audio_job(
             "model_name": model_name,
             "language": language,
             "filename": file_name,
-            "audio_base64": audio_b64,  
+            "s3_object_key": object_key,
+        },
+        "s3Config": {
+            "accessId": settings.s3_access_id,
+            "accessSecret": settings.s3_access_secret,
+            "bucketName": settings.s3_bucket_name,
+            "endpointUrl": settings.s3_endpoint_url  
         }
     }
+
     headers = {
         "Authorization": RUNPOD_API,
         "Content-Type": "application/json",

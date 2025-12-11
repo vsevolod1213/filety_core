@@ -21,6 +21,11 @@ class Settings:
         self.runpod_api = os.getenv("RUNPOD_API")
         self.runpod_id = os.getenv("RUNPOD_ID")
 
+        self.s3_access_id = os.getenv("S3_ACCESS_ID")
+        self.s3_access_secret = os.getenv("S3_ACCESS_SECRET")
+        self.s3_bucket_name = os.getenv("S3_BUCKET_NAME")
+        self.s3_endpoint_url = os.getenv("S3_ENDPOINT_URL")
+        
     @property
     def database_url(self) -> str:
         return (
