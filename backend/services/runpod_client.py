@@ -50,15 +50,8 @@ async def submit_audio_job(
             "language": language,
             "filename": file_name,
             "s3_object_key": object_key,
-        },
-        "s3Config": {
-            "accessId": settings.s3_access_id,
-            "accessSecret": settings.s3_access_secret,
-            "bucketName": settings.s3_bucket_name,
-            "endpointUrl": settings.s3_endpoint_url  
         }
     }
-
     headers = {
         "Authorization": RUNPOD_API,
         "Content-Type": "application/json",
