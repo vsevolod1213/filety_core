@@ -42,9 +42,6 @@ TASKS: dict[str, dict] = {}
 limiter = Limiter(key_func = get_remote_address)
 app = FastAPI(title="Failety API")
 
-app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://filety.ru",
@@ -54,6 +51,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 @app.exception_handler(RateLimitExceeded)
 def ratelimit_handler(request, exc):
